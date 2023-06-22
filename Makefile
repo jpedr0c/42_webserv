@@ -1,35 +1,18 @@
 NAME = webserv
 
-SRCS = src/main.cpp src/Utils.cpp src/ServerManager.cpp src/Response.cpp src/Client.cpp src/HttpRequest.cpp \
-	   src/ConfigFile.cpp src/ConfigParser.cpp src/ServerConfig.cpp src/Location.cpp src/CgiHandler.cpp \
-	   src/Mime.cpp src/LogService.cpp
+CC = c++
+CPPFLAGS = -Wall -Werror -Wextra -std=c++98 -g3
 
-HEADERS	= includes/Webserv.hpp
+SRCS = src/*.cpp
 
-OBJS = $(SRCS:.cpp=.o)
+all: $(NAME)
 
-CXX = c++
+$(NAME):
+	$(CC) $(CPPFLAGS) $(SRCS) -o $(NAME)
 
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98
-CXXFLAGS += -g3 
+fclean:
+	rm -rf $(NAME)
 
-RM = rm -rf
+re: fclean all
 
-RESET = "\033[0m"
-BLACK = "\033[1m\033[37m"
-
-all:
-	@$(MAKE) $(NAME) -j5
-$(NAME) : $(OBJS) $(HEADERS)
-	$(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME)
-	@echo $(BLACK)-webserv compiled 🌐 $(RESET)
-
-clean:
-	$(RM) $(OBJS)
-
-fclean: clean
-	$(RM) $(NAME)
-
-re: 	fclean all
-
-.PHONY: all clean fclean re
+.PHONY: fclean, all, re

@@ -212,7 +212,7 @@ void ServerConfig::setLocation(std::string path, std::vector<std::string> parame
       new_location.setMethods(methods);
       flag_methods = true;
     } else if (parametr[i] == "autoindex" && (i + 1) < parametr.size()) {
-      if (path == "/cgi-bin")
+      if (path == "/cgi")
         throw Error("Parametr autoindex not allow for CGI");
       if (flag_autoindex)
         throw Error("Autoindex of location is duplicated");
@@ -225,14 +225,14 @@ void ServerConfig::setLocation(std::string path, std::vector<std::string> parame
       checkToken(parametr[++i]);
       new_location.setIndexLocation(parametr[i]);
     } else if (parametr[i] == "return" && (i + 1) < parametr.size()) {
-      if (path == "/cgi-bin")
+      if (path == "/cgi")
         throw Error("Parametr return not allow for CGI");
       if (!new_location.getReturn().empty())
         throw Error("Return of location is duplicated ");
       checkToken(parametr[++i]);
       new_location.setReturn(parametr[i]);
     } else if (parametr[i] == "alias" && (i + 1) < parametr.size()) {
-      if (path == "/cgi-bin")
+      if (path == "/cgi")
         throw Error("Parametr alias not allow for CGI");
       if (!new_location.getAlias().empty())
         throw Error("Alias of location is duplicated");
@@ -277,7 +277,7 @@ void ServerConfig::setLocation(std::string path, std::vector<std::string> parame
     } else if (i < parametr.size())
       throw Error("Parametr in a location is invalid");
   }
-  if (new_location.getPath() != "/cgi-bin" && new_location.getIndexLocation().empty())
+  if (new_location.getPath() != "/cgi" && new_location.getIndexLocation().empty())
     new_location.setIndexLocation(this->_index);
   if (!flag_max_size)
     new_location.setMaxBodySize(this->_client_max_body_size);
@@ -316,7 +316,7 @@ bool ServerConfig::isValidErrorPages() {
 
 /* check parametrs of location */
 int ServerConfig::isValidLocation(Location &location) const {
-  if (location.getPath() == "/cgi-bin") {
+  if (location.getPath() == "/cgi") {
     if (location.getCgiPath().empty() || location.getCgiExtension().empty() || location.getIndexLocation().empty())
       return (1);
 
