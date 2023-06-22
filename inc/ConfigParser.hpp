@@ -28,21 +28,6 @@ class ConfigParser {
   int stringCompare(std::string str1, std::string str2, size_t pos);
 
   int print();
-
- public:
-  class ErrorException : public std::exception {
-   private:
-    std::string _message;
-
-   public:
-    ErrorException(std::string message) throw() {
-      _message = "CONFIG PARSER ERROR: " + message;
-    }
-    virtual const char *what() const throw() {
-      return (_message.c_str());
-    }
-    virtual ~ErrorException() throw() {}
-  };
 };
 
 #endif
