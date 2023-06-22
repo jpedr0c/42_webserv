@@ -49,22 +49,19 @@ int ConfigParser::print() {
 }
 
 /* checking and read config file, split servers to strings and creating vector of servers */
-int ConfigParser::createCluster(const std::string &config_file) {
-  std::string content;
-  ConfigFile file(config_file);
+int ConfigParser::createCluster(const std::string &filePath) {
+  ConfigFile file(filePath);
 
   if (file.getTypePath(file.getPath()) != 1)
     throw Error("File is invalid");
   if (file.checkFile(file.getPath(), 4) == -1)
     throw Error("File is not accessible");
-  content = file.readFile(config_file);
-  if (content.empty())
+  std::string fileContent = file.readFile(filePath);
+  if (fileContent.empty())
     throw Error("File is empty");
-  removeComments(content);
-  removeWhiteSpace(content);
-  splitServers(content);
+  extractServersConfig(fileContent);
   if (this->_server_config.size() != this->_nb_server)
-    throw Error("Somthing with size");  // rewrite the sentence
+    throw Error("Something with size");
   for (size_t i = 0; i < this->_nb_server; i++) {
     ServerConfig server;
     createServer(this->_server_config[i], server);
@@ -76,29 +73,40 @@ int ConfigParser::createCluster(const std::string &config_file) {
 }
 
 /*remove comments from char # to \n */
-void ConfigParser::removeComments(std::string &content) {
-  size_t pos;
+const std::string ConfigParser::removeComments(std::string &string) {
+  int hashtagIndex = string.find('#');
 
-  pos = content.find('#');
-  while (pos != std::string::npos) {
-    size_t pos_end;
-    pos_end = content.find('\n', pos);
-    content.erase(pos, pos_end - pos);
-    pos = content.find('#');
+  while (hashtagIndex >= 0) {
+    int newLineIndex = string.find('\n', hashtagIndex);
+    string.erase(hashtagIndex, newLineIndex - hashtagIndex);
+    hashtagIndex = string.find('#');
   }
+
+  return string;
 }
 
-/* deleting whitespaces in the start, end and in the content if more than one */
-void ConfigParser::removeWhiteSpace(std::string &content) {
-  size_t i = 0;
+const std::string ConfigParser::removeSpaces(std::string &string) {
+  size_t start = 0;
 
-  while (content[i] && isspace(content[i]))
-    i++;
-  content = content.substr(i);
-  i = content.length() - 1;
-  while (i > 0 && isspace(content[i]))
-    i--;
-  content = content.substr(0, i + 1);
+  while (start < string.size() && std::isspace(string[start]))
+    start++;
+
+  string.erase(0, start);
+  size_t end = string.size() - 1;
+
+  while (end > 0 && std::isspace(string[end]))
+    end--;
+
+  string.erase(end + 1);
+  return string;
+}
+
+const std::string ConfigParser::extractServersConfig(std::string &fileContent) {
+  std::string contentWithoutComments = this->removeComments(fileContent);
+  std::string contentWithoutSpaces = this->removeSpaces(contentWithoutComments);
+  this->splitServers(contentWithoutSpaces);
+
+  return contentWithoutSpaces;
 }
 
 /* spliting servers on separetly strings in vector */

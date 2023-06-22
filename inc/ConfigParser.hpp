@@ -18,8 +18,9 @@ class ConfigParser {
   int createCluster(const std::string &config_file);
 
   void splitServers(std::string &content);
-  void removeComments(std::string &content);
-  void removeWhiteSpace(std::string &content);
+  const std::string removeComments(std::string &string);
+  const std::string removeSpaces(std::string &string);
+  const std::string extractServersConfig(std::string &fileContent);
   size_t findStartServer(size_t start, std::string &content);
   size_t findEndServer(size_t start, std::string &content);
   void createServer(std::string &config, ServerConfig &server);
