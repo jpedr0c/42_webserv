@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Login | Webserv</title>
+  </head>
+  <body class="bg-slate-900">
+    <main class="w-screen h-screen flex justify-center items-center text-white">
+      <section class="flex flex-col justify-start space-y-10">
+        <div class="flex flex-col space-y-2">
+          <h1 class="text-2xl">Create cookie</h1>
+          <!-- TODO: Set action to CGI -->
+          <form
+            action=""
+            method="get"
+            class="flex flex-row items-center p-8 bg-slate-800 space-x-2 rounded-md"
+          >
+            <input
+              type="text"
+              placeholder="key"
+              name="key"
+              class="p-2 rounded-md bg-slate-700 outline-none focus:ring-2 focus:ring-purple-500"
+              required
+            />
+            <p class="font-semibold">=</p>
+            <input
+              type="text"
+              placeholder="value"
+              name="value"
+              class="p-2 rounded-md bg-slate-700 outline-none focus:ring-2 focus:ring-purple-500"
+              required
+            />
+            <button type="submit" class="py-2 px-5 bg-purple-500 rounded-md">
+              Create
+            </button>
+          </form>
+        </div>
+        <div class="flex flex-col space-y-2">
+          <h1 class="text-2xl">Get cookie</h1>
+          <!-- TODO: Set action to CGI -->
+          <form
+            action=""
+            method="get"
+            class="flex flex-row items-center p-8 bg-slate-800 space-x-2 rounded-md"
+          >
+            <input
+              type="text"
+              placeholder="Cookie Key"
+              name="key"
+              class="p-2 rounded-md bg-slate-700 outline-none focus:ring-2 focus:ring-purple-500 w-3/5"
+              required
+            />
+            <button
+              type="submit"
+              class="py-2 px-5 bg-purple-500 rounded-md w-2/5"
+            >
+              Get
+            </button>
+          </form>
+        </div>
+        <div class="flex flex-col space-y-2">
+          <h1 class="text-2xl">Delete cookie</h1>
+          <!-- TODO: Set action to CGI -->
+          <form
+            action=""
+            method="get"
+            class="flex flex-row items-center p-8 bg-slate-800 space-x-2 rounded-md"
+          >
+            <input
+              type="text"
+              placeholder="Cookie Key"
+              name="key"
+              class="p-2 rounded-md bg-slate-700 outline-none focus:ring-2 focus:ring-purple-500 w-3/5"
+              required
+            />
+            <button
+              type="submit"
+              class="py-2 px-5 bg-purple-500 rounded-md w-2/5"
+            >
+              Delete
+            </button>
+          </form>
+        </div>
+        <a
+          href="index.html"
+          class="py-2 text-center ring-2 ring-purple-500 rounded-md"
+        >
+          Voltar
+        </a>
+      </section>
+    </main>
+  </body>
+</html>
