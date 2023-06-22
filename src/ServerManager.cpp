@@ -1,4 +1,4 @@
-#include "../inc/ServerManager.hpp"
+#include "../includes/ServerManager.hpp"
 
 ServerManager::ServerManager() {}
 ServerManager::~ServerManager() {}

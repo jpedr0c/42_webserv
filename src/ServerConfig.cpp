@@ -1,4 +1,4 @@
-#include "../inc/ServerConfig.hpp"
+#include "../includes/ServerConfig.hpp"
 
 ServerConfig::ServerConfig() {
   this->_port = 0;

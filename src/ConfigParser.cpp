@@ -1,4 +1,4 @@
-#include "../inc/ConfigParser.hpp"
+#include "../includes/ConfigParser.hpp"
 
 ConfigParser::ConfigParser() {
   this->_nb_server = 0;
@@ -48,27 +48,36 @@ int ConfigParser::print() {
   return (0);
 }
 
-/* checking and read config file, split servers to strings and creating vector of servers */
 int ConfigParser::createCluster(const std::string &filePath) {
   ConfigFile file(filePath);
 
-  if (file.getTypePath(file.getPath()) != 1)
+  if (file.getTypePath(filePath) != 1)
     throw Error("File is invalid");
-  if (file.checkFile(file.getPath(), 4) == -1)
+
+  int isFileReadable = file.checkFile(filePath, R_OK);
+
+  if (isFileReadable == -1)
     throw Error("File is not accessible");
+
   std::string fileContent = file.readFile(filePath);
+
   if (fileContent.empty())
     throw Error("File is empty");
+
   extractServersConfig(fileContent);
+
   if (this->_server_config.size() != this->_nb_server)
     throw Error("Something with size");
+
   for (size_t i = 0; i < this->_nb_server; i++) {
     ServerConfig server;
     createServer(this->_server_config[i], server);
     this->_servers.push_back(server);
   }
+
   if (this->_nb_server > 1)
     checkServers();
+
   return (0);
 }
 

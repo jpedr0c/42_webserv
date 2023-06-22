@@ -1,5 +1,5 @@
-#include "../inc/ServerManager.hpp"
-#include "../inc/Webserv.hpp"
+#include "../includes/ServerManager.hpp"
+#include "../includes/Webserv.hpp"
 
 int error(std::string errorMessage) {
   std::cerr << "\033[0;31m";

@@ -1,4 +1,4 @@
-#include "../inc/Location.hpp"
+#include "../includes/Location.hpp"
 
 Location::Location() {
   this->_path = "";
