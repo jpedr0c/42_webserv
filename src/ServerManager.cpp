@@ -8,7 +8,7 @@ ServerManager::~ServerManager() {}
  */
 void ServerManager::setupServers(std::vector<ServerConfig> servers) {
   std::cout << std::endl;
-  Logger::logMsg(LIGHTMAGENTA, CONSOLE_OUTPUT, "Initializing  Servers...");
+  LogService::printLog(PURPLE, SUCCESS, "Initializing  Servers...");
   _servers = servers;
   char buf[INET_ADDRSTRLEN];
   bool serverDub;
@@ -22,8 +22,8 @@ void ServerManager::setupServers(std::vector<ServerConfig> servers) {
     }
     if (!serverDub)
       it->setupServer();
-    Logger::logMsg(LIGHTMAGENTA, CONSOLE_OUTPUT, "Server Created: ServerName[%s] Host[%s] Port[%d]", it->getServerName().c_str(),
-                   inet_ntop(AF_INET, &it->getHost(), buf, INET_ADDRSTRLEN), it->getPort());
+    LogService::printLog(PURPLE, SUCCESS, "Server Created: ServerName[%s] Host[%s] Port[%d]", it->getServerName().c_str(),
+                         inet_ntop(AF_INET, &it->getHost(), buf, INET_ADDRSTRLEN), it->getPort());
   }
 }
 
@@ -54,7 +54,7 @@ void ServerManager::runServers() {
     write_set_cpy = _write_fd_pool;
 
     if ((select_ret = select(_biggest_fd + 1, &recv_set_cpy, &write_set_cpy, NULL, &timer)) < 0) {
-      Logger::logMsg(RED, CONSOLE_OUTPUT, "webserv: select error %s   Closing ....", strerror(errno));
+      LogService::printLog(RED, SUCCESS, "webserv: select error %s   Closing ....", strerror(errno));
       exit(1);
       continue;
     }
@@ -81,7 +81,7 @@ void ServerManager::runServers() {
 void ServerManager::checkTimeout() {
   for (std::map<int, Client>::iterator it = _clients_map.begin(); it != _clients_map.end(); ++it) {
     if (time(NULL) - it->second.getLastTime() > CONNECTION_TIMEOUT) {
-      Logger::logMsg(YELLOW, CONSOLE_OUTPUT, "Client %d Timeout, Closing Connection..", it->first);
+      LogService::printLog(YELLOW, SUCCESS, "Client %d Timeout, Closing Connection..", it->first);
       closeConnection(it->first);
       return;
     }
@@ -97,11 +97,11 @@ void ServerManager::initializeSets() {
   for (std::vector<ServerConfig>::iterator it = _servers.begin(); it != _servers.end(); ++it) {
     // Now it calles listen() twice on even if two servers have the same host:port
     if (listen(it->getFd(), 512) == -1) {
-      Logger::logMsg(RED, CONSOLE_OUTPUT, "webserv: listen error: %s   Closing....", strerror(errno));
+      LogService::printLog(RED, SUCCESS, "webserv: listen error: %s   Closing....", strerror(errno));
       exit(EXIT_FAILURE);
     }
     if (fcntl(it->getFd(), F_SETFL, O_NONBLOCK) < 0) {
-      Logger::logMsg(RED, CONSOLE_OUTPUT, "webserv: fcntl error: %s   Closing....", strerror(errno));
+      LogService::printLog(RED, SUCCESS, "webserv: fcntl error: %s   Closing....", strerror(errno));
       exit(EXIT_FAILURE);
     }
     addToSet(it->getFd(), _recv_fd_pool);
@@ -125,15 +125,15 @@ void ServerManager::acceptNewConnection(ServerConfig &serv) {
 
   if ((client_sock = accept(serv.getFd(), (struct sockaddr *)&client_address,
                             (socklen_t *)&client_address_size)) == -1) {
-    Logger::logMsg(RED, CONSOLE_OUTPUT, "webserv: accept error %s", strerror(errno));
+    LogService::printLog(RED, SUCCESS, "webserv: accept error %s", strerror(errno));
     return;
   }
-  Logger::logMsg(YELLOW, CONSOLE_OUTPUT, "New Connection From %s, Assigned Socket %d", inet_ntop(AF_INET, &client_address, buf, INET_ADDRSTRLEN), client_sock);
+  LogService::printLog(YELLOW, SUCCESS, "New Connection From %s, Assigned Socket %d", inet_ntop(AF_INET, &client_address, buf, INET_ADDRSTRLEN), client_sock);
 
   addToSet(client_sock, _recv_fd_pool);
 
   if (fcntl(client_sock, F_SETFL, O_NONBLOCK) < 0) {
-    Logger::logMsg(RED, CONSOLE_OUTPUT, "webserv: fcntl error %s", strerror(errno));
+    LogService::printLog(RED, SUCCESS, "webserv: fcntl error %s", strerror(errno));
     removeFromSet(client_sock, _recv_fd_pool);
     close(client_sock);
     return;
@@ -168,13 +168,12 @@ void ServerManager::sendResponse(const int &i, Client &c) {
     bytes_sent = write(i, response.c_str(), response.length());
 
   if (bytes_sent < 0) {
-    Logger::logMsg(RED, CONSOLE_OUTPUT, "sendResponse(): error sending : %s", strerror(errno));
+    LogService::printLog(RED, SUCCESS, "sendResponse(): error sending : %s", strerror(errno));
     closeConnection(i);
   } else if (bytes_sent == 0 || (size_t)bytes_sent == response.length()) {
-    // Logger::logMsg(LIGHTMAGENTA, CONSOLE_OUTPUT, "sendResponse() Done sending ");
-    Logger::logMsg(CYAN, CONSOLE_OUTPUT, "Response Sent To Socket %d, Stats=<%d>", i, c.response.getCode());
+    LogService::printLog(CYAN, SUCCESS, "Response Sent To Socket %d, Stats=<%d>", i, c.response.getCode());
     if (c.request.keepAlive() == false || c.request.errorCode() || c.response.getCgiState()) {
-      Logger::logMsg(YELLOW, CONSOLE_OUTPUT, "Client %d: Connection Closed.", i);
+      LogService::printLog(YELLOW, SUCCESS, "Client %d: Connection Closed.", i);
       closeConnection(i);
     } else {
       removeFromSet(i, _write_fd_pool);
@@ -211,11 +210,11 @@ void ServerManager::readRequest(const int &i, Client &c) {
   int bytes_read = 0;
   bytes_read = read(i, buffer, MESSAGE_BUFFER);
   if (bytes_read == 0) {
-    Logger::logMsg(YELLOW, CONSOLE_OUTPUT, "webserv: Client %d Closed Connection", i);
+    LogService::printLog(YELLOW, SUCCESS, "webserv: Client %d Closed Connection", i);
     closeConnection(i);
     return;
   } else if (bytes_read < 0) {
-    Logger::logMsg(RED, CONSOLE_OUTPUT, "webserv: fd %d read error %s", i, strerror(errno));
+    LogService::printLog(RED, SUCCESS, "webserv: fd %d read error %s", i, strerror(errno));
     closeConnection(i);
     return;
   } else if (bytes_read != 0) {
@@ -227,7 +226,7 @@ void ServerManager::readRequest(const int &i, Client &c) {
   if (c.request.parsingCompleted() || c.request.errorCode())  // 1 = parsing completed and we can work on the response.
   {
     assignServer(c);
-    Logger::logMsg(CYAN, CONSOLE_OUTPUT, "Request Recived From Socket %d, Method=<%s>  URI=<%s>", i, c.request.getMethodStr().c_str(), c.request.getPath().c_str());
+    LogService::printLog(CYAN, SUCCESS, "Request Recived From Socket %d, Method=<%s>  URI=<%s>", i, c.request.getMethodStr().c_str(), c.request.getPath().c_str());
     c.buildResponse();
     if (c.response.getCgiState()) {
       handleReqBody(c);
@@ -264,7 +263,7 @@ void ServerManager::sendCgiBody(Client &c, CgiHandler &cgi) {
     bytes_sent = write(cgi.pipe_in[1], req_body.c_str(), req_body.length());
 
   if (bytes_sent < 0) {
-    Logger::logMsg(RED, CONSOLE_OUTPUT, "sendCgiBody() Error Sending: %s", strerror(errno));
+    LogService::printLog(RED, SUCCESS, "sendCgiBody() Error Sending: %s", strerror(errno));
     removeFromSet(cgi.pipe_in[1], _write_fd_pool);
     close(cgi.pipe_in[1]);
     close(cgi.pipe_out[1]);
@@ -299,7 +298,7 @@ void ServerManager::readCgiResponse(Client &c, CgiHandler &cgi) {
       c.response._response_content.insert(0, "HTTP/1.1 200 OK\r\n");
     return;
   } else if (bytes_read < 0) {
-    Logger::logMsg(RED, CONSOLE_OUTPUT, "readCgiResponse() Error Reading From CGI Script: ", strerror(errno));
+    LogService::printLog(RED, SUCCESS, "readCgiResponse() Error Reading From CGI Script: ", strerror(errno));
     removeFromSet(cgi.pipe_out[0], _recv_fd_pool);
     close(cgi.pipe_in[0]);
     close(cgi.pipe_out[0]);
