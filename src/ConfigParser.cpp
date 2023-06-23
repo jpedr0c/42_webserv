@@ -124,12 +124,12 @@ void ConfigParser::splitServers(std::string &content) {
   size_t end = 1;
 
   if (content.find("server", 0) == std::string::npos)
-    throw Error("Server did not find");
+    throw Error("Server not found");
   while (start != end && start < content.length()) {
     start = findStartServer(start, content);
     end = findEndServer(start, content);
     if (start == end)
-      throw Error("problem with scope");
+      throw Error("No valid server found in the configuration file");
     this->_server_config.push_back(content.substr(start, end - start + 1));
     this->numberOfServers++;
     start = end + 1;

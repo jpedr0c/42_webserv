@@ -370,7 +370,7 @@ void Response::setErrorResponse(short code) {
   buildErrorBody();
   setStatusLine();
   setHeaders();
-  _response_content.append(_response_body);
+  _response_content += _response_body;
 }
 
 /* Returns the entire reponse ( Headers + Body )*/

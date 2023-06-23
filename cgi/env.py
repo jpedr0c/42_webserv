@@ -1,20 +1,13 @@
-#!/usr/bin/python3
+"""
+-> How to activate venv in Ubuntu
+    - In the directory cgi, rum the command:
+        source ./venv/bin/activate
+"""
 
 import os
-import cgi
+response_body = ["HTTP/1.1 200 OK", "Content-type: text/html\n", "<html>", "<head></head>", "<body>"]
+[print(i) for i in response_body]
 
-print("HTTP/1.1 200 OK")
-print("Content-type: text/html\r\n\r\n")
-
-print("<html>")
-print("<head>")
-print("<h2>Environment:</h2><br>")
-
-
-print("<html>")
-print("<body>")
-for param in os.environ.keys():
-    print("<b>%20s</b>: %s<br>" % (param, os.environ[param]))
-
-print("</body>")
-print("</html>")
+for i in os.environ.keys():
+    print("<b>%20s</b>: %s<br>" % (i, os.environ[i]))
+print("</body>\n</html>")

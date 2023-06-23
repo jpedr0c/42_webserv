@@ -36,6 +36,7 @@ void ServerManager::setupServers(std::vector<ServerConfig> servers) {
  * - servers and clients sockets will be added to _recv_set_pool initially,
  *   after that, when a request is fully parsed, socket will be moved to _write_set_pool
  */
+// FIXME: verificar as funções que chama o response porém que são do manager
 void ServerManager::runServers() {
   fd_set receivedFdCopy;
   fd_set writeFdCopy;
@@ -127,19 +128,13 @@ void ServerManager::initializeSets() {
 
   // adds servers sockets to _recv_fd_pool set
   for (std::vector<ServerConfig>::iterator it = _servers.begin(); it != _servers.end(); ++it) {
-    // Now it calles listen() twice on even if two servers have the same host:port
-    if (listen(it->getFd(), 512) == -1) {
-      LogService::printLog(RED, SUCCESS, "webserv: listen error: %s   Closing....", strerror(errno));
-      exit(EXIT_FAILURE);
-    }
-    if (fcntl(it->getFd(), F_SETFL, O_NONBLOCK) < 0) {
-      LogService::printLog(RED, SUCCESS, "webserv: fcntl error: %s   Closing....", strerror(errno));
-      exit(EXIT_FAILURE);
-    }
+    if (listen(it->getFd(), 512) == -1)
+      LogService::printLog(RED, FAILURE, "webserv: listen error: %s   Closing....", strerror(errno));
+    if (fcntl(it->getFd(), F_SETFL, O_NONBLOCK) < 0)
+      LogService::printLog(RED, FAILURE, "webserv: fcntl error: %s   Closing....", strerror(errno));
     addToSet(it->getFd(), _recv_fd_pool);
     _servers_map.insert(std::make_pair(it->getFd(), *it));
   }
-  // at this stage _biggest_fd will belong to the last server created.
   _biggest_fd = _servers.back().getFd();
 }
 
@@ -192,11 +187,12 @@ void ServerManager::closeConnection(const int fd) {
  * If no error was found in request and Connection header value is keep-alive,
  * connection is kept, otherwise connection will be closed.
  */
+// FIXME: verificar o que for relacionado ao request
 void ServerManager::sendResponse(const int &i, Client &c) {
   int bytes_sent;
   std::string response = c.response.getRes();
-  if (response.length() >= MESSAGE_BUFFER)
-    bytes_sent = write(i, response.c_str(), MESSAGE_BUFFER);
+  if (response.length() >= 40000)
+    bytes_sent = write(i, response.c_str(), 40000);
   else
     bytes_sent = write(i, response.c_str(), response.length());
 
@@ -283,7 +279,7 @@ void ServerManager::handleReqBody(Client &c) {
   }
 }
 
-// FIXME: essa função não foi criada no manager
+// FIXME: essa função não foi criada no manager, só prcisa refatorar
 /* Send request body to CGI script */
 void ServerManager::sendCgiBody(Client &c, CgiHandler &cgi) {
   int bytes_sent;
@@ -312,12 +308,12 @@ void ServerManager::sendCgiBody(Client &c, CgiHandler &cgi) {
   }
 }
 
-// FIXME: essa função não foi criada no manager
+// FIXME: essa função não foi criada no manager, só precisa refatorar
 /* Reads outpud produced by the CGI script */
 void ServerManager::readCgiResponse(Client &c, CgiHandler &cgi) {
-  char buffer[MESSAGE_BUFFER * 2];
+  char buffer[40000 * 2];
   int bytes_read = 0;
-  bytes_read = read(cgi.pipe_out[0], buffer, MESSAGE_BUFFER * 2);
+  bytes_read = read(cgi.pipe_out[0], buffer, 40000 * 2);
 
   if (bytes_read == 0) {
     removeFromSet(cgi.pipe_out[0], _recv_fd_pool);
