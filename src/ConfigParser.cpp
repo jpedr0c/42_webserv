@@ -300,15 +300,26 @@ int ConfigParser::stringCompare(std::string str1, std::string str2, size_t pos) 
   return (1);
 }
 
+bool ConfigParser::areServersDuplicate(ServerConfig &currentServer, ServerConfig &nextServer) {
+  bool isPortDuplicate = (currentServer.getPort() == nextServer.getPort());
+  bool isHostDuplicate = (currentServer.getHost() == nextServer.getHost());
+  bool isNameDuplicate = (currentServer.getServerName() == nextServer.getServerName());
+
+  return (isPortDuplicate && isHostDuplicate && isNameDuplicate);
+}
+
 /* checking repeat and mandatory parametrs*/
 void ConfigParser::checkServers() {
-  std::vector<ServerConfig>::iterator it1;
-  std::vector<ServerConfig>::iterator it2;
+  std::vector<ServerConfig>::iterator currentServer;
+  std::vector<ServerConfig>::iterator nextServer;
 
-  for (it1 = this->_servers.begin(); it1 != this->_servers.end() - 1; it1++) {
-    for (it2 = it1 + 1; it2 != this->_servers.end(); it2++) {
-      if (it1->getPort() == it2->getPort() && it1->getHost() == it2->getHost() && it1->getServerName() == it2->getServerName())
+  for (currentServer = this->_servers.begin(); currentServer != this->_servers.end() - 1; currentServer++) {
+    nextServer = currentServer;
+    ++nextServer;
+    while (nextServer != _servers.end()) {
+      if (areServersDuplicate(*currentServer, *nextServer))
         throw Error("Failed server validation");
+      ++nextServer;
     }
   }
 }

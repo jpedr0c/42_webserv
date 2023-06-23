@@ -22,6 +22,7 @@ class ConfigParser {
   const std::string removeSpaces(std::string &string);
   const std::string extractServersConfig(std::string &fileContent);
   size_t findStartServer(size_t start, std::string &content);
+  bool areServersDuplicate(ServerConfig &currentServer, ServerConfig &nextServer);
   size_t findEndServer(size_t start, std::string &content);
   void createServer(std::string &config, ServerConfig &server);
   void checkServers();
