@@ -9,7 +9,7 @@ class ConfigParser {
  private:
   std::vector<ServerConfig> _servers;
   std::vector<std::string> _server_config;
-  size_t _nb_server;
+  size_t numberOfServers;
 
  public:
   ConfigParser();

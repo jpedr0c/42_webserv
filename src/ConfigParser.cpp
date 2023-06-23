@@ -1,7 +1,7 @@
 #include "../includes/ConfigParser.hpp"
 
 ConfigParser::ConfigParser() {
-  this->_nb_server = 0;
+  this->numberOfServers = 0;
 }
 
 ConfigParser::~ConfigParser() {}
@@ -66,16 +66,16 @@ int ConfigParser::createCluster(const std::string &filePath) {
 
   extractServersConfig(fileContent);
 
-  if (this->_server_config.size() != this->_nb_server)
+  if (this->_server_config.size() != this->numberOfServers)
     throw Error("Something with size");
 
-  for (size_t i = 0; i < this->_nb_server; i++) {
+  for (size_t i = 0; i < this->numberOfServers; i++) {
     ServerConfig server;
     createServer(this->_server_config[i], server);
     this->_servers.push_back(server);
   }
 
-  if (this->_nb_server > 1)
+  if (this->numberOfServers > 1)
     checkServers();
 
   return (0);
@@ -131,7 +131,7 @@ void ConfigParser::splitServers(std::string &content) {
     if (start == end)
       throw Error("problem with scope");
     this->_server_config.push_back(content.substr(start, end - start + 1));
-    this->_nb_server++;
+    this->numberOfServers++;
     start = end + 1;
   }
 }
