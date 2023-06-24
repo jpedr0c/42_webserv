@@ -1,18 +1,18 @@
-#include "../includes/ServerManager.hpp"
+#include "../inc/ManagerServ.hpp"
 
-ServerManager::ServerManager() {}
-ServerManager::~ServerManager() {}
+ManagerServ::ManagerServ() {}
+ManagerServ::~ManagerServ() {}
 
 /**
  * Start all servers on ports specified in the config file
  */
-void ServerManager::setupServers(std::vector<ServerConfig> servers) {
+void ManagerServ::setupServers(std::vector<Server> servers) {
   std::cout << "Initializing  Servers...\n";
   _servers = servers;
 
-  for (std::vector<ServerConfig>::iterator it = _servers.begin(); it != _servers.end(); ++it) {
+  for (std::vector<Server>::iterator it = _servers.begin(); it != _servers.end(); ++it) {
     bool isSameServ = false;
-    for (std::vector<ServerConfig>::iterator existingServerIt = _servers.begin(); existingServerIt != it; ++existingServerIt) {
+    for (std::vector<Server>::iterator existingServerIt = _servers.begin(); existingServerIt != it; ++existingServerIt) {
       if (existingServerIt->getHost() == it->getHost() && existingServerIt->getPort() == it->getPort()) {
         it->setFd(existingServerIt->getFd());
         isSameServ = true;
@@ -37,7 +37,7 @@ void ServerManager::setupServers(std::vector<ServerConfig> servers) {
  *   after that, when a request is fully parsed, socket will be moved to _write_set_pool
  */
 // FIXME: verificar as funções que chama o response porém que são do manager
-void ServerManager::runServers() {
+void ManagerServ::runServers() {
   fd_set receivedFdCopy;
   fd_set writeFdCopy;
   int selectStatus;
@@ -72,7 +72,7 @@ void ServerManager::runServers() {
   }
 }
 
-// void ServerManager::runServers() {
+// void ManagerServ::runServers() {
 //   fd_set receivedFdCopy;
 //   fd_set writeFdCopy;
 //   int select_ret;
@@ -111,7 +111,7 @@ void ServerManager::runServers() {
 // }
 
 /* Checks time passed for clients since last message, If more than CONNECTION_TIMEOUT, close connection */
-void ServerManager::checkTimeout() {
+void ManagerServ::checkTimeout() {
   for (std::map<int, Client>::iterator it = _clients_map.begin(); it != _clients_map.end(); ++it) {
     if (time(NULL) - it->second.getLastTime() > 30) {
       LogService::printLog(YELLOW, SUCCESS, "Client %d Timeout, Closing Connection..", it->first);
@@ -122,12 +122,12 @@ void ServerManager::checkTimeout() {
 }
 
 /* initialize recv+write fd_sets and add all server listening sockets to _recv_fd_pool. */
-void ServerManager::initializeSets() {
+void ManagerServ::initializeSets() {
   FD_ZERO(&_recv_fd_pool);
   FD_ZERO(&_write_fd_pool);
 
   // adds servers sockets to _recv_fd_pool set
-  for (std::vector<ServerConfig>::iterator it = _servers.begin(); it != _servers.end(); ++it) {
+  for (std::vector<Server>::iterator it = _servers.begin(); it != _servers.end(); ++it) {
     if (listen(it->getFd(), 512) == -1)
       LogService::printLog(RED, FAILURE, "webserv: listen error: %s   Closing....", strerror(errno));
     if (fcntl(it->getFd(), F_SETFL, O_NONBLOCK) < 0)
@@ -143,7 +143,7 @@ void ServerManager::initializeSets() {
  * Create new Client object and add it to _client_map
  * Add client socket to _recv_fd_pool
  */
-void ServerManager::acceptNewConnection(ServerConfig &serv) {
+void ManagerServ::acceptNewConnection(Server &serv) {
   struct sockaddr_in client_address;
   long client_address_size = sizeof(client_address);
   int client_sock;
@@ -173,7 +173,7 @@ void ServerManager::acceptNewConnection(ServerConfig &serv) {
 }
 
 /* Closes connection from fd i and remove associated client object from _clients_map */
-void ServerManager::closeConnection(const int fd) {
+void ManagerServ::closeConnection(const int fd) {
   if (FD_ISSET(fd, &_write_fd_pool))
     removeFromSet(fd, _write_fd_pool);
   if (FD_ISSET(fd, &_recv_fd_pool))
@@ -188,7 +188,7 @@ void ServerManager::closeConnection(const int fd) {
  * connection is kept, otherwise connection will be closed.
  */
 // FIXME: verificar o que for relacionado ao request
-void ServerManager::sendResponse(const int &i, Client &c) {
+void ManagerServ::sendResponse(const int &i, Client &c) {
   int bytes_sent;
   std::string response = c.response.getRes();
   if (response.length() >= 40000)
@@ -216,8 +216,8 @@ void ServerManager::sendResponse(const int &i, Client &c) {
 }
 
 /* Assigen server_block configuration to a client based on Host Header in request and server_name*/
-void ServerManager::assignServer(Client &c) {
-  for (std::vector<ServerConfig>::iterator it = _servers.begin();
+void ManagerServ::assignServer(Client &c) {
+  for (std::vector<Server>::iterator it = _servers.begin();
        it != _servers.end(); ++it) {
     if (c.server.getHost() == it->getHost() &&
         c.server.getPort() == it->getPort() &&
@@ -234,7 +234,7 @@ void ServerManager::assignServer(Client &c) {
  * socket will be moved from _recv_fd_pool to _write_fd_pool
  * and response will be sent on the next iteration of select().
  */
-void ServerManager::readRequest(const int &i, Client &c) {
+void ManagerServ::readRequest(const int &i, Client &c) {
   char buffer[40000];
   int bytes_read = 0;
   bytes_read = read(i, buffer, 40000);
@@ -267,7 +267,7 @@ void ServerManager::readRequest(const int &i, Client &c) {
   }
 }
 
-void ServerManager::handleReqBody(Client &c) {
+void ManagerServ::handleReqBody(Client &c) {
   if (c.request.getBody().length() == 0) {
     std::string tmp;
     std::fstream file;
@@ -281,7 +281,7 @@ void ServerManager::handleReqBody(Client &c) {
 
 // FIXME: essa função não foi criada no manager, só prcisa refatorar
 /* Send request body to CGI script */
-void ServerManager::sendCgiBody(Client &c, CgiHandler &cgi) {
+void ManagerServ::sendCgiBody(Client &c, CgiController &cgi) {
   int bytes_sent;
   std::string &req_body = c.request.getBody();
 
@@ -310,7 +310,7 @@ void ServerManager::sendCgiBody(Client &c, CgiHandler &cgi) {
 
 // FIXME: essa função não foi criada no manager, só precisa refatorar
 /* Reads outpud produced by the CGI script */
-void ServerManager::readCgiResponse(Client &c, CgiHandler &cgi) {
+void ManagerServ::readCgiResponse(Client &c, CgiController &cgi) {
   char buffer[40000 * 2];
   int bytes_read = 0;
   bytes_read = read(cgi.pipe_out[0], buffer, 40000 * 2);
@@ -343,13 +343,13 @@ void ServerManager::readCgiResponse(Client &c, CgiHandler &cgi) {
   }
 }
 
-void ServerManager::addToSet(const int fd, fd_set &set) {
+void ManagerServ::addToSet(const int fd, fd_set &set) {
   FD_SET(fd, &set);
   if (fd > _biggest_fd)
     _biggest_fd = fd;
 }
 
-void ServerManager::removeFromSet(const int fd, fd_set &fdSet) {
+void ManagerServ::removeFromSet(const int fd, fd_set &fdSet) {
   FD_CLR(fd, &fdSet);
   if (fd == _biggest_fd)
     _biggest_fd--;

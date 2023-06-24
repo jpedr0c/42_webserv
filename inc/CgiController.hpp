@@ -1,11 +1,11 @@
-#ifndef CGIHANDLER_HPP
-#define CGIHANDLER_HPP
+#ifndef CgiController_HPP
+#define CgiController_HPP
 
 #include "Webserv.hpp"
 
-class HttpRequest;
 class Location;
-class CgiHandler {
+class Request;
+class CgiController {
  private:
   std::map<std::string, std::string> _env;
   char **_ch_env;
@@ -18,14 +18,14 @@ class CgiHandler {
   int pipe_in[2];
   int pipe_out[2];
 
-  CgiHandler();
-  CgiHandler(std::string path);
-  ~CgiHandler();
-  CgiHandler(CgiHandler const &other);
-  CgiHandler &operator=(CgiHandler const &rhs);
+  CgiController();
+  CgiController(std::string path);
+  ~CgiController();
+  CgiController(CgiController const &other);
+  CgiController &operator=(CgiController const &rhs);
 
-  void initEnv(HttpRequest &req, const std::vector<Location>::iterator it_loc);
-  void initEnvCgi(HttpRequest &req, const std::vector<Location>::iterator it_loc);
+  void initEnv(Request &req, const std::vector<Location>::iterator it_loc);
+  void initEnvCgi(Request &req, const std::vector<Location>::iterator it_loc);
   void execute(short &error_code);
   void sendHeaderBody(int &pipe_out, int &fd, std::string &);
   void fixHeader(std::string &header);

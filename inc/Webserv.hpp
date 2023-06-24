@@ -17,7 +17,6 @@
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
-#include <iomanip>
 #include <sstream>
 
 /* STL Containers */
@@ -43,14 +42,14 @@
 #include <sys/select.h>
 #include <sys/socket.h>
 
-#include "CgiHandler.hpp"
+#include "CgiController.hpp"
 #include "ConfigFile.hpp"
-#include "ConfigParser.hpp"
-#include "HttpRequest.hpp"
+#include "Parser.hpp"
+#include "Request.hpp"
 #include "Location.hpp"
 #include "LogService.hpp"
 #include "Mime.hpp"
-#include "ServerConfig.hpp"
+#include "Server.hpp"
 
 #define CONNECTION_TIMEOUT 60  // Time in seconds before client get kicked out if no data was sent.
 #ifdef TESTER

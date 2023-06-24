@@ -1,5 +1,5 @@
-#include "../includes/ServerManager.hpp"
-#include "../includes/Webserv.hpp"
+#include "../inc/ManagerServ.hpp"
+#include "../inc/Webserv.hpp"
 
 int error(std::string errorMessage) {
   std::cerr << "\033[0;31m";
@@ -14,8 +14,8 @@ int main(int argc, char **argv) {
       throw std::invalid_argument("Usage: ./webserv <config_file>.conf");
     signal(SIGPIPE, SIG_IGN);
     std::string configFile = (argv[1]);
-    ConfigParser serverParser;
-    ServerManager managerServ;
+    Parser serverParser;
+    ManagerServ managerServ;
     serverParser.createCluster(configFile);
     managerServ.setupServers(serverParser.getServers());
     managerServ.runServers();

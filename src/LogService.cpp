@@ -1,4 +1,4 @@
-#include "../includes/LogService.hpp"
+#include "../inc/LogService.hpp"
 
 std::string LogService::getCurrentDateTime() {
   std::time_t now = std::time(NULL);
@@ -23,7 +23,7 @@ void LogService::printLog(const char* color, ExitStatus status, const char* str,
   std::cout << color << LogService::getCurrentDateTime() << output << RESET << std::endl;
 }
 
-void LogService::logStartServer(ServerConfig& server) {
+void LogService::logStartServer(Server& server) {
   char buf[INET_ADDRSTRLEN];
 
   const char* name = server.getServerName().c_str();

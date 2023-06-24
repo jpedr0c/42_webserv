@@ -1,19 +1,19 @@
-#ifndef CONFIGPARSER_HPP
-#define CONFIGPARSER_HPP
+#ifndef Parser_HPP
+#define Parser_HPP
 
 #include "Webserv.hpp"
 
-class ServerConfig;
+class Server;
 
-class ConfigParser {
+class Parser {
  private:
-  std::vector<ServerConfig> _servers;
+  std::vector<Server> _servers;
   std::vector<std::string> _server_config;
   size_t numberOfServers;
 
  public:
-  ConfigParser();
-  ~ConfigParser();
+  Parser();
+  ~Parser();
 
   int createCluster(const std::string &config_file);
 
@@ -22,14 +22,28 @@ class ConfigParser {
   const std::string removeSpaces(std::string &string);
   const std::string extractServersConfig(std::string &fileContent);
   size_t findStartServer(size_t start, std::string &content);
-  bool areServersDuplicate(ServerConfig &currentServer, ServerConfig &nextServer);
   size_t findEndServer(size_t start, std::string &content);
-  void createServer(std::string &config, ServerConfig &server);
+  void createServer(std::string &config, Server &server);
   void checkServers();
-  std::vector<ServerConfig> getServers();
+  std::vector<Server> getServers();
   int stringCompare(std::string str1, std::string str2, size_t pos);
 
   int print();
+
+ public:
+  class ErrorException : public std::exception {
+   private:
+    std::string _message;
+
+   public:
+    ErrorException(std::string message) throw() {
+      _message = "CONFIG PARSER ERROR: " + message;
+    }
+    virtual const char *what() const throw() {
+      return (_message.c_str());
+    }
+    virtual ~ErrorException() throw() {}
+  };
 };
 
 #endif

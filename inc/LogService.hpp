@@ -66,12 +66,12 @@ enum ExitStatus {
   SUCCESS,
 };
 
-class ServerConfig;
+class Server;
 class LogService {
  public:
   static std::string getCurrentDateTime();
   static void printLog(const char* color, ExitStatus status, const char* str, ...);
-  static void logStartServer(ServerConfig& server);
+  static void logStartServer(Server& server);
 };
 
 #endif

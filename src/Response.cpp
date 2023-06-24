@@ -1,4 +1,4 @@
-#include "../includes/Response.hpp"
+#include "../inc/Response.hpp"
 
 Mime Response::_mime;
 
@@ -17,7 +17,7 @@ Response::Response() {
 
 Response::~Response() {}
 
-Response::Response(HttpRequest &req) : request(req) {
+Response::Response(Request &req) : request(req) {
   _target_file = "";
   _body.clear();
   _body_length = 0;
@@ -135,11 +135,11 @@ static std::string combinePaths(std::string p1, std::string p2, std::string p3) 
   return (res);
 }
 
-static void replaceAlias(Location &location, HttpRequest &request, std::string &target_file) {
+static void replaceAlias(Location &location, Request &request, std::string &target_file) {
   target_file = combinePaths(location.getAlias(), request.getPath().substr(location.getPath().length()), "");
 }
 
-static void appendRoot(Location &location, HttpRequest &request, std::string &target_file) {
+static void appendRoot(Location &location, Request &request, std::string &target_file) {
   target_file = combinePaths(location.getRootLocation(), request.getPath(), "");
 }
 
@@ -167,9 +167,9 @@ int Response::handleCgi(std::string &location_key) {
   path = this->request.getPath();
   if (path[0] && path[0] == '/')
     path.erase(0, 1);
-  if (path == "cgi")
+  if (path == "cgi-bin")
     path += "/" + _server.getLocationKey(location_key)->getIndexLocation();
-  else if (path == "cgi/")
+  else if (path == "cgi-bin/")
     path.append(_server.getLocationKey(location_key)->getIndexLocation());
 
   pos = path.find(".");
@@ -240,7 +240,7 @@ int Response::handleTarget() {
     if (checkReturn(target_location, _code, _location))
       return (1);
 
-    if (target_location.getPath().find("cgi") != std::string::npos) {
+    if (target_location.getPath().find("cgi-bin") != std::string::npos) {
       return (handleCgi(location_key));
     }
 
@@ -370,7 +370,7 @@ void Response::setErrorResponse(short code) {
   buildErrorBody();
   setStatusLine();
   setHeaders();
-  _response_content += _response_body;
+  _response_content.append(_response_body);
 }
 
 /* Returns the entire reponse ( Headers + Body )*/
@@ -449,11 +449,11 @@ int Response::readFile() {
   return (0);
 }
 
-void Response::setServer(ServerConfig &server) {
+void Response::setServer(Server &server) {
   _server = server;
 }
 
-void Response::setRequest(HttpRequest &req) {
+void Response::setRequest(Request &req) {
   request = req;
 }
 

@@ -1,13 +1,13 @@
-#include "../includes/ConfigParser.hpp"
+#include "../inc/Parser.hpp"
 
-ConfigParser::ConfigParser() {
+Parser::Parser() {
   this->numberOfServers = 0;
 }
 
-ConfigParser::~ConfigParser() {}
+Parser::~Parser() {}
 
 /* printing parametrs of servers from config file */
-int ConfigParser::print() {
+int Parser::print() {
   std::cout << "------------- Config -------------" << std::endl;
   for (size_t i = 0; i < _servers.size(); i++) {
     std::cout << "Server #" << i + 1 << std::endl;
@@ -48,7 +48,44 @@ int ConfigParser::print() {
   return (0);
 }
 
-int ConfigParser::createCluster(const std::string &filePath) {
+const std::string Parser::removeComments(std::string &string) {
+  int hashtagIndex = string.find('#');
+
+  while (hashtagIndex >= 0) {
+    int newLineIndex = string.find('\n', hashtagIndex);
+    string.erase(hashtagIndex, newLineIndex - hashtagIndex);
+    hashtagIndex = string.find('#');
+  }
+
+  return string;
+}
+
+const std::string Parser::removeSpaces(std::string &string) {
+  size_t start = 0;
+
+  while (start < string.size() && std::isspace(string[start]))
+    start++;
+
+  string.erase(0, start);
+  size_t end = string.size() - 1;
+
+  while (end > 0 && std::isspace(string[end]))
+    end--;
+
+  string.erase(end + 1);
+  return string;
+}
+
+const std::string Parser::extractServersConfig(std::string &fileContent) {
+  std::string contentWithoutComments = this->removeComments(fileContent);
+  std::string contentWithoutSpaces = this->removeSpaces(contentWithoutComments);
+  this->splitServers(contentWithoutSpaces);
+
+  return contentWithoutSpaces;
+}
+
+/* checking and read config file, split servers to strings and creating vector of servers */
+int Parser::createCluster(const std::string &filePath) {
   ConfigFile file(filePath);
 
   if (file.getTypePath(filePath) != 1)
@@ -70,7 +107,7 @@ int ConfigParser::createCluster(const std::string &filePath) {
     throw Error("Something with size");
 
   for (size_t i = 0; i < this->numberOfServers; i++) {
-    ServerConfig server;
+    Server server;
     createServer(this->_server_config[i], server);
     this->_servers.push_back(server);
   }
@@ -81,55 +118,20 @@ int ConfigParser::createCluster(const std::string &filePath) {
   return (0);
 }
 
-/*remove comments from char # to \n */
-const std::string ConfigParser::removeComments(std::string &string) {
-  int hashtagIndex = string.find('#');
-
-  while (hashtagIndex >= 0) {
-    int newLineIndex = string.find('\n', hashtagIndex);
-    string.erase(hashtagIndex, newLineIndex - hashtagIndex);
-    hashtagIndex = string.find('#');
-  }
-
-  return string;
-}
-
-const std::string ConfigParser::removeSpaces(std::string &string) {
-  size_t start = 0;
-
-  while (start < string.size() && std::isspace(string[start]))
-    start++;
-
-  string.erase(0, start);
-  size_t end = string.size() - 1;
-
-  while (end > 0 && std::isspace(string[end]))
-    end--;
-
-  string.erase(end + 1);
-  return string;
-}
-
-const std::string ConfigParser::extractServersConfig(std::string &fileContent) {
-  std::string contentWithoutComments = this->removeComments(fileContent);
-  std::string contentWithoutSpaces = this->removeSpaces(contentWithoutComments);
-  this->splitServers(contentWithoutSpaces);
-
-  return contentWithoutSpaces;
-}
+/* deleting whitespaces in the start, end and in the content if more than one */
 
 /* spliting servers on separetly strings in vector */
-void ConfigParser::splitServers(std::string &content) {
+void Parser::splitServers(std::string &content) {
   size_t start = 0;
   size_t end = 1;
 
   if (content.find("server", 0) == std::string::npos)
-    throw Error("Server not found");
+    throw ErrorException("Server did not find");
   while (start != end && start < content.length()) {
     start = findStartServer(start, content);
     end = findEndServer(start, content);
     if (start == end)
-      throw Error("No valid server found in the configuration file");
+      throw ErrorException("problem with scope");
     this->_server_config.push_back(content.substr(start, end - start + 1));
     this->numberOfServers++;
     start = end + 1;
@@ -137,30 +139,30 @@ void ConfigParser::splitServers(std::string &content) {
 }
 
 /* finding a server begin and return the index of { start of server */
-size_t ConfigParser::findStartServer(size_t start, std::string &content) {
+size_t Parser::findStartServer(size_t start, std::string &content) {
   size_t i;
 
   for (i = start; content[i]; i++) {
     if (content[i] == 's')
       break;
     if (!isspace(content[i]))
-      throw Error("Wrong character out of server scope{}");
+      throw ErrorException("Wrong character out of server scope{}");
   }
   if (!content[i])
     return (start);
   if (content.compare(i, 6, "server") != 0)
-    throw Error("Wrong character out of server scope{}");
+    throw ErrorException("Wrong character out of server scope{}");
   i += 6;
   while (content[i] && isspace(content[i]))
     i++;
   if (content[i] == '{')
     return (i);
   else
-    throw Error("Wrong character out of server scope{}");
+    throw ErrorException("Wrong character out of server scope{}");
 }
 
 /* finding a server end and return the index of } end of server */
-size_t ConfigParser::findEndServer(size_t start, std::string &content) {
+size_t Parser::findEndServer(size_t start, std::string &content) {
   size_t i;
   size_t scope;
 
@@ -197,7 +199,7 @@ std::vector<std::string> splitParametrs(std::string line, std::string sep) {
 }
 
 /* creating Server from string and fill the value */
-void ConfigParser::createServer(std::string &config, ServerConfig &server) {
+void Parser::createServer(std::string &config, Server &server) {
   std::vector<std::string> parametrs;
   std::vector<std::string> error_codes;
   int flag_loc = 1;
@@ -206,35 +208,35 @@ void ConfigParser::createServer(std::string &config, ServerConfig &server) {
 
   parametrs = splitParametrs(config += ' ', std::string(" \n\t"));
   if (parametrs.size() < 3)
-    throw Error("Failed server validation");
+    throw ErrorException("Failed server validation");
   for (size_t i = 0; i < parametrs.size(); i++) {
     if (parametrs[i] == "listen" && (i + 1) < parametrs.size() && flag_loc) {
       if (server.getPort())
-        throw Error("Port is duplicated");
+        throw ErrorException("Port is duplicated");
       server.setPort(parametrs[++i]);
     } else if (parametrs[i] == "location" && (i + 1) < parametrs.size()) {
       std::string path;
       i++;
       if (parametrs[i] == "{" || parametrs[i] == "}")
-        throw Error("Wrong character in server scope{}");
+        throw ErrorException("Wrong character in server scope{}");
       path = parametrs[i];
       std::vector<std::string> codes;
       if (parametrs[++i] != "{")
-        throw Error("Wrong character in server scope{}");
+        throw ErrorException("Wrong character in server scope{}");
       i++;
       while (i < parametrs.size() && parametrs[i] != "}")
         codes.push_back(parametrs[i++]);
       server.setLocation(path, codes);
       if (i < parametrs.size() && parametrs[i] != "}")
-        throw Error("Wrong character in server scope{}");
+        throw ErrorException("Wrong character in server scope{}");
       flag_loc = 0;
     } else if (parametrs[i] == "host" && (i + 1) < parametrs.size() && flag_loc) {
       if (server.getHost())
-        throw Error("Host is duplicated");
+        throw ErrorException("Host is duplicated");
       server.setHost(parametrs[++i]);
     } else if (parametrs[i] == "root" && (i + 1) < parametrs.size() && flag_loc) {
       if (!server.getRoot().empty())
-        throw Error("Root is duplicated");
+        throw ErrorException("Root is duplicated");
       server.setRoot(parametrs[++i]);
     } else if (parametrs[i] == "error_page" && (i + 1) < parametrs.size() && flag_loc) {
       while (++i < parametrs.size()) {
@@ -242,31 +244,31 @@ void ConfigParser::createServer(std::string &config, ServerConfig &server) {
         if (parametrs[i].find(';') != std::string::npos)
           break;
         if (i + 1 >= parametrs.size())
-          throw Error("Wrong character out of server scope{}");
+          throw ErrorException("Wrong character out of server scope{}");
       }
     } else if (parametrs[i] == "client_max_body_size" && (i + 1) < parametrs.size() && flag_loc) {
       if (flag_max_size)
-        throw Error("Client_max_body_size is duplicated");
+        throw ErrorException("Client_max_body_size is duplicated");
       server.setClientMaxBodySize(parametrs[++i]);
       flag_max_size = true;
     } else if (parametrs[i] == "server_name" && (i + 1) < parametrs.size() && flag_loc) {
       if (!server.getServerName().empty())
-        throw Error("Server_name is duplicated");
+        throw ErrorException("Server_name is duplicated");
       server.setServerName(parametrs[++i]);
     } else if (parametrs[i] == "index" && (i + 1) < parametrs.size() && flag_loc) {
       if (!server.getIndex().empty())
-        throw Error("Index is duplicated");
+        throw ErrorException("Index is duplicated");
       server.setIndex(parametrs[++i]);
     } else if (parametrs[i] == "autoindex" && (i + 1) < parametrs.size() && flag_loc) {
       if (flag_autoindex)
-        throw Error("Autoindex of server is duplicated");
+        throw ErrorException("Autoindex of server is duplicated");
       server.setAutoindex(parametrs[++i]);
       flag_autoindex = true;
     } else if (parametrs[i] != "}" && parametrs[i] != "{") {
       if (!flag_loc)
-        throw Error("Parametrs after location");
+        throw ErrorException("Parametrs after location");
       else
-        throw Error("Unsupported directive");
+        throw ErrorException("Unsupported directive");
     }
   }
   if (server.getRoot().empty())
@@ -276,18 +278,18 @@ void ConfigParser::createServer(std::string &config, ServerConfig &server) {
   if (server.getIndex().empty())
     server.setIndex("index.html;");
   if (ConfigFile::isFileExistAndReadable(server.getRoot(), server.getIndex()))
-    throw Error("Index from config file not found or unreadable");
+    throw ErrorException("Index from config file not found or unreadable");
   if (server.checkLocaitons())
-    throw Error("Location is duplicated ");
+    throw ErrorException("Locaition is duplicated");
   if (!server.getPort())
-    throw Error("Port not found");
+    throw ErrorException("Port not found");
   server.setErrorPages(error_codes);
   if (!server.isValidErrorPages())
-    throw Error("Incorrect path for error page or number of error");
+    throw ErrorException("Incorrect path for error page or number of error");
 }
 
 /* comparing strings from position */
-int ConfigParser::stringCompare(std::string str1, std::string str2, size_t pos) {
+int Parser::stringCompare(std::string str1, std::string str2, size_t pos) {
   size_t i;
 
   i = 0;
@@ -300,30 +302,19 @@ int ConfigParser::stringCompare(std::string str1, std::string str2, size_t pos) 
   return (1);
 }
 
-bool ConfigParser::areServersDuplicate(ServerConfig &currentServer, ServerConfig &nextServer) {
-  bool isPortDuplicate = (currentServer.getPort() == nextServer.getPort());
-  bool isHostDuplicate = (currentServer.getHost() == nextServer.getHost());
-  bool isNameDuplicate = (currentServer.getServerName() == nextServer.getServerName());
-
-  return (isPortDuplicate && isHostDuplicate && isNameDuplicate);
-}
-
 /* checking repeat and mandatory parametrs*/
-void ConfigParser::checkServers() {
-  std::vector<ServerConfig>::iterator currentServer;
-  std::vector<ServerConfig>::iterator nextServer;
+void Parser::checkServers() {
+  std::vector<Server>::iterator it1;
+  std::vector<Server>::iterator it2;
 
-  for (currentServer = this->_servers.begin(); currentServer != this->_servers.end() - 1; currentServer++) {
-    nextServer = currentServer;
-    ++nextServer;
-    while (nextServer != _servers.end()) {
-      if (areServersDuplicate(*currentServer, *nextServer))
-        throw Error("Failed server validation");
-      ++nextServer;
+  for (it1 = this->_servers.begin(); it1 != this->_servers.end() - 1; it1++) {
+    for (it2 = it1 + 1; it2 != this->_servers.end(); it2++) {
+      if (it1->getPort() == it2->getPort() && it1->getHost() == it2->getHost() && it1->getServerName() == it2->getServerName())
+        throw ErrorException("Failed server validation");
     }
   }
 }
 
-std::vector<ServerConfig> ConfigParser::getServers() {
+std::vector<Server> Parser::getServers() {
   return (this->_servers);
 }

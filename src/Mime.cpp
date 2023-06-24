@@ -1,4 +1,4 @@
-#include "../includes/Mime.hpp"
+#include "../inc/Mime.hpp"
 
 Mime::Mime() {
   _mime_types[".html"] = "text/html";
@@ -12,6 +12,7 @@ Mime::Mime() {
   _mime_types[".gz"] = "application/x-gzip";
   _mime_types[".ico"] = "image/x-icon";
   _mime_types[".jpg"] = "image/jpeg";
+  _mime_types[".svg"] = "image/svg+xml";
   _mime_types[".jpeg"] = "image/jpeg";
   _mime_types[".png"] = "image/png";
   _mime_types[".txt"] = "text/plain";

@@ -1,8 +1,4 @@
-"""
--> How to activate venv in Ubuntu
-    - In the directory cgi, rum the command:
-        source ./venv/bin/activate
-"""
+#!/usr/bin/python3
 
 import datetime
 
