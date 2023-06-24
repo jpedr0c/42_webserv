@@ -6,35 +6,35 @@
 class Location {
  private:
   std::string path;
-  std::string _root;
-  bool _autoindex;
-  std::string _index;
-  std::vector<short> _methods;  // GET+ POST- DELETE- PUT- HEAD-
-  std::string _return;
-  std::string _alias;
-  std::vector<std::string> _cgi_path;
-  std::vector<std::string> _cgi_ext;
-  unsigned long _client_max_body_size;
+  std::string root;
+  bool autoIndex;
+  std::string index;
+  std::vector<short> methods;
+  std::string returns;
+  std::string alias;
+  std::vector<std::string> cgiPath;
+  std::vector<std::string> cgiExt;
+  unsigned long maxBodySize;
 
  public:
-  std::map<std::string, std::string> _ext_path;
+  std::map<std::string, std::string> extPath;
 
   Location();
-  Location(const Location &other);
-  Location &operator=(const Location &rhs);
+  Location(const Location &copy);
+  Location &operator=(const Location &copy);
   ~Location();
 
-  void setPath(std::string parametr);
-  void setRootLocation(std::string parametr);
+  void setPath(std::string param);
+  void setRootLocation(std::string param);
   void setMethods(std::vector<std::string> methods);
-  void setAutoindex(std::string parametr);
-  void setIndexLocation(std::string parametr);
-  void setReturn(std::string parametr);
-  void setAlias(std::string parametr);
+  void setAutoindex(std::string param);
+  void setIndexLocation(std::string param);
+  void setReturn(std::string param);
+  void setAlias(std::string param);
   void setCgiPath(std::vector<std::string> path);
   void setCgiExtension(std::vector<std::string> extension);
-  void setMaxBodySize(std::string parametr);
-  void setMaxBodySize(unsigned long parametr);
+  void setMaxBodySize(std::string param);
+  void setMaxBodySize(unsigned long param);
 
   const std::string &getPath() const;
   const std::string &getRootLocation() const;
@@ -48,7 +48,8 @@ class Location {
   const std::map<std::string, std::string> &getExtensionPath() const;
   const unsigned long &getMaxBodySize() const;
 
-  std::string getPrintMethods() const;  // for checking only
+  // FIXME: não esquecer de deletar aqui também
+  std::string getPrintMethods() const;
 };
 
 #endif

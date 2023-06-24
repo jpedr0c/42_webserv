@@ -4,7 +4,7 @@
 CgiController::CgiController() {
   this->_cgi_pid = -1;
   this->_exit_status = 0;
-  this->_cgi_path = "";
+  this->cgiPath = "";
   this->_ch_env = NULL;
   this->_argv = NULL;
 }
@@ -12,7 +12,7 @@ CgiController::CgiController() {
 CgiController::CgiController(std::string path) {
   this->_cgi_pid = -1;
   this->_exit_status = 0;
-  this->_cgi_path = path;
+  this->cgiPath = path;
   this->_ch_env = NULL;
   this->_argv = NULL;
 }
@@ -35,7 +35,7 @@ CgiController::CgiController(const CgiController &other) {
   this->_env = other._env;
   this->_ch_env = other._ch_env;
   this->_argv = other._argv;
-  this->_cgi_path = other._cgi_path;
+  this->cgiPath = other.cgiPath;
   this->_cgi_pid = other._cgi_pid;
   this->_exit_status = other._exit_status;
 }
@@ -45,7 +45,7 @@ CgiController &CgiController::operator=(const CgiController &rhs) {
     this->_env = rhs._env;
     this->_ch_env = rhs._ch_env;
     this->_argv = rhs._argv;
-    this->_cgi_path = rhs._cgi_path;
+    this->cgiPath = rhs.cgiPath;
     this->_cgi_pid = rhs._cgi_pid;
     this->_exit_status = rhs._exit_status;
   }
@@ -58,7 +58,7 @@ void CgiController::setCgiPid(pid_t cgi_pid) {
 }
 
 void CgiController::setCgiPath(const std::string &cgi_path) {
-  this->_cgi_path = cgi_path;
+  this->cgiPath = cgi_path;
 }
 
 /* Get functions */
@@ -71,17 +71,17 @@ const pid_t &CgiController::getCgiPid() const {
 }
 
 const std::string &CgiController::getCgiPath() const {
-  return (this->_cgi_path);
+  return (this->cgiPath);
 }
 
 void CgiController::initEnvCgi(Request &req, const std::vector<Location>::iterator it_loc) {
   std::string cgi_exec = ("cgi/" + it_loc->getCgiPath()[0]).c_str();
   char *cwd = getcwd(NULL, 0);
-  if (_cgi_path[0] != '/') {
+  if (cgiPath[0] != '/') {
     std::string tmp(cwd);
     tmp.append("/");
-    if (_cgi_path.length() > 0)
-      _cgi_path.insert(0, tmp);
+    if (cgiPath.length() > 0)
+      cgiPath.insert(0, tmp);
   }
   if (req.getMethod() == POST) {
     std::stringstream out;
@@ -92,10 +92,10 @@ void CgiController::initEnvCgi(Request &req, const std::vector<Location>::iterat
 
   this->_env["GATEWAY_INTERFACE"] = std::string("CGI/1.1");
   this->_env["SCRIPT_NAME"] = cgi_exec;  //
-  this->_env["SCRIPT_FILENAME"] = this->_cgi_path;
-  this->_env["PATH_INFO"] = this->_cgi_path;        //
-  this->_env["PATH_TRANSLATED"] = this->_cgi_path;  //
-  this->_env["REQUEST_URI"] = this->_cgi_path;      //
+  this->_env["SCRIPT_FILENAME"] = this->cgiPath;
+  this->_env["PATH_INFO"] = this->cgiPath;        //
+  this->_env["PATH_TRANSLATED"] = this->cgiPath;  //
+  this->_env["REQUEST_URI"] = this->cgiPath;      //
   this->_env["SERVER_NAME"] = req.getHeader("host");
   this->_env["SERVER_PORT"] = "8002";
   this->_env["REQUEST_METHOD"] = req.getMethodStr();
@@ -119,7 +119,7 @@ void CgiController::initEnvCgi(Request &req, const std::vector<Location>::iterat
   }
   this->_argv = (char **)malloc(sizeof(char *) * 3);
   this->_argv[0] = strdup(cgi_exec.c_str());
-  this->_argv[1] = strdup(this->_cgi_path.c_str());
+  this->_argv[1] = strdup(this->cgiPath.c_str());
   this->_argv[2] = NULL;
 }
 
@@ -127,21 +127,21 @@ void CgiController::initEnvCgi(Request &req, const std::vector<Location>::iterat
 void CgiController::initEnv(Request &req, const std::vector<Location>::iterator it_loc) {
   int poz;
   std::string extension;
-  std::string ext_path;
+  std::string extPath;
 
-  extension = this->_cgi_path.substr(this->_cgi_path.find("."));
-  std::map<std::string, std::string>::iterator it_path = it_loc->_ext_path.find(extension);
-  if (it_path == it_loc->_ext_path.end())
+  extension = this->cgiPath.substr(this->cgiPath.find("."));
+  std::map<std::string, std::string>::iterator it_path = it_loc->extPath.find(extension);
+  if (it_path == it_loc->extPath.end())
     return;
-  ext_path = it_loc->_ext_path[extension];
+  extPath = it_loc->extPath[extension];
 
   this->_env["AUTH_TYPE"] = "Basic";
   this->_env["CONTENT_LENGTH"] = req.getHeader("content-length");
   this->_env["CONTENT_TYPE"] = req.getHeader("content-type");
   this->_env["GATEWAY_INTERFACE"] = "CGI/1.1";
-  poz = findStart(this->_cgi_path, "cgi/");
-  this->_env["SCRIPT_NAME"] = this->_cgi_path;
-  this->_env["SCRIPT_FILENAME"] = ((poz < 0 || (size_t)(poz + 8) > this->_cgi_path.size()) ? "" : this->_cgi_path.substr(poz + 8, this->_cgi_path.size()));  // check dif cases after put right parametr from the response
+  poz = findStart(this->cgiPath, "cgi/");
+  this->_env["SCRIPT_NAME"] = this->cgiPath;
+  this->_env["SCRIPT_FILENAME"] = ((poz < 0 || (size_t)(poz + 8) > this->cgiPath.size()) ? "" : this->cgiPath.substr(poz + 8, this->cgiPath.size()));  // check dif cases after put right parametr from the response
   this->_env["PATH_INFO"] = getPathInfo(req.getPath(), it_loc->getCgiExtension());
   this->_env["PATH_TRANSLATED"] = it_loc->getRootLocation() + (this->_env["PATH_INFO"] == "" ? "/" : this->_env["PATH_INFO"]);
   this->_env["QUERY_STRING"] = decode(req.getQuery());
@@ -164,8 +164,8 @@ void CgiController::initEnv(Request &req, const std::vector<Location>::iterator 
     this->_ch_env[i] = strdup(tmp.c_str());
   }
   this->_argv = (char **)malloc(sizeof(char *) * 3);
-  this->_argv[0] = strdup(ext_path.c_str());
-  this->_argv[1] = strdup(this->_cgi_path.c_str());
+  this->_argv[0] = strdup(extPath.c_str());
+  this->_argv[1] = strdup(this->cgiPath.c_str());
   this->_argv[2] = NULL;
 }
 
@@ -253,7 +253,7 @@ std::string CgiController::getPathInfo(std::string &path, std::vector<std::strin
 void CgiController::clear() {
   this->_cgi_pid = -1;
   this->_exit_status = 0;
-  this->_cgi_path = "";
+  this->cgiPath = "";
   this->_ch_env = NULL;
   this->_argv = NULL;
   this->_env.clear();

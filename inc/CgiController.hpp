@@ -11,7 +11,7 @@ class CgiController {
   char **_ch_env;
   char **_argv;
   int _exit_status;
-  std::string _cgi_path;
+  std::string cgiPath;
   pid_t _cgi_pid;
 
  public:

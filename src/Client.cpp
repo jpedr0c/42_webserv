@@ -6,7 +6,6 @@ Client::Client() {
 
 Client::~Client() {}
 
-/* Copy constructor */
 Client::Client(const Client &copy) {
   this->clientSocket = copy.clientSocket;
   this->clientSocketAddr = copy.clientSocketAddr;
@@ -16,7 +15,6 @@ Client::Client(const Client &copy) {
   this->lastMessageTime = copy.lastMessageTime;
 }
 
-/* Assinment operator */
 Client &Client::operator=(const Client &copy) {
   this->clientSocket = copy.clientSocket;
   this->clientSocketAddr = copy.clientSocketAddr;

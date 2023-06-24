@@ -5,12 +5,6 @@
 #include "Response.hpp"
 #include "Webserv.hpp"
 
-/**
- * ManagerServ
- * * operates the webserver and is responsible for
- * - runing servers with configration extracted from config file
- * - establishing new connections with clients and receive/send requests/responses.
- */
 class ManagerServ {
  public:
   ManagerServ();
@@ -40,4 +34,4 @@ class ManagerServ {
   void removeFromSet(const int, fd_set &);
 };
 
-#endif  // ManagerServ_HPP
+#endif

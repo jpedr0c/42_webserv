@@ -4,11 +4,11 @@ Server::Server() {
   this->_port = 0;
   this->_host = 0;
   this->_server_name = "";
-  this->_root = "";
-  this->_client_max_body_size = MAX_CONTENT_LENGTH;
-  this->_index = "";
+  this->root = "";
+  this->maxBodySize = MAX_CONTENT_LENGTH;
+  this->index = "";
   this->_listen_fd = 0;
-  this->_autoindex = false;
+  this->autoIndex = false;
   this->initErrorPages();
 }
 
@@ -18,15 +18,15 @@ Server::~Server() {}
 Server::Server(const Server &other) {
   if (this != &other) {
     this->_server_name = other._server_name;
-    this->_root = other._root;
+    this->root = other.root;
     this->_host = other._host;
     this->_port = other._port;
-    this->_client_max_body_size = other._client_max_body_size;
-    this->_index = other._index;
+    this->maxBodySize = other.maxBodySize;
+    this->index = other.index;
     this->_error_pages = other._error_pages;
     this->_locations = other._locations;
     this->_listen_fd = other._listen_fd;
-    this->_autoindex = other._autoindex;
+    this->autoIndex = other.autoIndex;
     this->_server_address = other._server_address;
   }
   return;
@@ -36,15 +36,15 @@ Server::Server(const Server &other) {
 Server &Server::operator=(const Server &rhs) {
   if (this != &rhs) {
     this->_server_name = rhs._server_name;
-    this->_root = rhs._root;
+    this->root = rhs.root;
     this->_port = rhs._port;
     this->_host = rhs._host;
-    this->_client_max_body_size = rhs._client_max_body_size;
-    this->_index = rhs._index;
+    this->maxBodySize = rhs.maxBodySize;
+    this->index = rhs.index;
     this->_error_pages = rhs._error_pages;
     this->_locations = rhs._locations;
     this->_listen_fd = rhs._listen_fd;
-    this->_autoindex = rhs._autoindex;
+    this->autoIndex = rhs.autoIndex;
     this->_server_address = rhs._server_address;
   }
   return (*this);
@@ -87,7 +87,7 @@ void Server::setHost(std::string parametr) {
 void Server::setRoot(std::string root) {
   checkToken(root);
   if (ConfigFile::getTypePath(root) == 2) {
-    this->_root = root;
+    this->root = root;
     return;
   }
   char dir[1024];
@@ -95,7 +95,7 @@ void Server::setRoot(std::string root) {
   std::string full_root = dir + root;
   if (ConfigFile::getTypePath(full_root) != 2)
     throw ErrorException("Wrong syntax: root");
-  this->_root = full_root;
+  this->root = full_root;
 }
 
 void Server::setPort(std::string parametr) {
@@ -125,12 +125,12 @@ void Server::setClientMaxBodySize(std::string parametr) {
   if (!ft_stoi(parametr))
     throw ErrorException("Wrong syntax: client_max_body_size");
   body_size = ft_stoi(parametr);
-  this->_client_max_body_size = body_size;
+  this->maxBodySize = body_size;
 }
 
 void Server::setIndex(std::string index) {
   checkToken(index);
-  this->_index = index;
+  this->index = index;
 }
 
 void Server::setAutoindex(std::string autoindex) {
@@ -138,7 +138,7 @@ void Server::setAutoindex(std::string autoindex) {
   if (autoindex != "on" && autoindex != "off")
     throw ErrorException("Wrong syntax: autoindex");
   if (autoindex == "on")
-    this->_autoindex = true;
+    this->autoIndex = true;
 }
 
 /* checks if there is such a default error code. If there is, it overwrites the path to the file,
@@ -162,10 +162,10 @@ void Server::setErrorPages(std::vector<std::string> &parametr) {
     std::string path = parametr[i];
     checkToken(path);
     if (ConfigFile::getTypePath(path) != 2) {
-      if (ConfigFile::getTypePath(this->_root + path) != 1)
-        throw ErrorException("Incorrect path for error page file: " + this->_root + path);
-      if (ConfigFile::checkAccessFile(this->_root + path, 0) == -1 || ConfigFile::checkAccessFile(this->_root + path, 4) == -1)
-        throw ErrorException("Error page file :" + this->_root + path + " is not accessible");
+      if (ConfigFile::getTypePath(this->root + path) != 1)
+        throw ErrorException("Incorrect path for error page file: " + this->root + path);
+      if (ConfigFile::checkAccessFile(this->root + path, 0) == -1 || ConfigFile::checkAccessFile(this->root + path, 4) == -1)
+        throw ErrorException("Error page file :" + this->root + path + " is not accessible");
     }
     std::map<short, std::string>::iterator it = this->_error_pages.find(code_error);
     if (it != _error_pages.end())
@@ -193,7 +193,7 @@ void Server::setLocation(std::string path, std::vector<std::string> parametr) {
       if (ConfigFile::getTypePath(parametr[i]) == 2)
         new_location.setRootLocation(parametr[i]);
       else
-        new_location.setRootLocation(this->_root + parametr[i]);
+        new_location.setRootLocation(this->root + parametr[i]);
     } else if ((parametr[i] == "allow_methods" || parametr[i] == "methods") && (i + 1) < parametr.size()) {
       if (flag_methods)
         throw ErrorException("Allow_methods of location is duplicated");
@@ -278,9 +278,9 @@ void Server::setLocation(std::string path, std::vector<std::string> parametr) {
       throw ErrorException("Parametr in a location is invalid");
   }
   if (new_location.getPath() != "/cgi" && new_location.getIndexLocation().empty())
-    new_location.setIndexLocation(this->_index);
+    new_location.setIndexLocation(this->index);
   if (!flag_max_size)
-    new_location.setMaxBodySize(this->_client_max_body_size);
+    new_location.setMaxBodySize(this->maxBodySize);
   valid = isValidLocation(new_location);
   if (valid == 1)
     throw ErrorException("Failed CGI validation");
@@ -346,10 +346,10 @@ int Server::isValidLocation(Location &location) const {
         std::string tmp_path = *it_path;
         if (tmp == ".py" || tmp == "*.py") {
           if (tmp_path.find("python") != std::string::npos)
-            location._ext_path.insert(std::make_pair(".py", tmp_path));
+            location.extPath.insert(std::make_pair(".py", tmp_path));
         } else if (tmp == ".sh" || tmp == "*.sh") {
           if (tmp_path.find("bash") != std::string::npos)
-            location._ext_path[".sh"] = tmp_path;
+            location.extPath[".sh"] = tmp_path;
         }
       }
     }
@@ -359,7 +359,7 @@ int Server::isValidLocation(Location &location) const {
     if (location.getPath()[0] != '/')
       return (2);
     if (location.getRootLocation().empty()) {
-      location.setRootLocation(this->_root);
+      location.setRootLocation(this->root);
     }
     if (ConfigFile::isFileExistAndReadable(location.getRootLocation() + location.getPath() + "/", location.getIndexLocation()))
       return (5);
@@ -381,11 +381,11 @@ const std::string &Server::getServerName() {
 }
 
 const std::string &Server::getRoot() {
-  return (this->_root);
+  return (this->root);
 }
 
 const bool &Server::getAutoindex() {
-  return (this->_autoindex);
+  return (this->autoIndex);
 }
 
 const in_addr_t &Server::getHost() {
@@ -397,7 +397,7 @@ const uint16_t &Server::getPort() {
 }
 
 const size_t &Server::getClientMaxBodySize() {
-  return (this->_client_max_body_size);
+  return (this->maxBodySize);
 }
 
 const std::vector<Location> &Server::getLocations() {
@@ -409,7 +409,7 @@ const std::map<short, std::string> &Server::getErrorPages() {
 }
 
 const std::string &Server::getIndex() {
-  return (this->_index);
+  return (this->index);
 }
 
 int Server::getFd() {
