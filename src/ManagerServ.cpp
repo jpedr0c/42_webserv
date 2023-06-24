@@ -113,7 +113,7 @@ void ManagerServ::runServers() {
 /* Checks time passed for clients since last message, If more than CONNECTION_TIMEOUT, close connection */
 void ManagerServ::checkTimeout() {
   for (std::map<int, Client>::iterator it = _clients_map.begin(); it != _clients_map.end(); ++it) {
-    if (time(NULL) - it->second.getLastTime() > 30) {
+    if (time(NULL) - it->second.getLastMessageTime() > 30) {
       LogService::printLog(YELLOW, SUCCESS, "Client %d Timeout, Closing Connection..", it->first);
       closeConnection(it->first);
       return;
@@ -210,7 +210,7 @@ void ManagerServ::sendResponse(const int &i, Client &c) {
       c.clearClient();
     }
   } else {
-    c.updateTime();
+    c.updateLastMessageTime();
     c.response.cutRes(bytes_sent);
   }
 }
@@ -247,7 +247,7 @@ void ManagerServ::readRequest(const int &i, Client &c) {
     closeConnection(i);
     return;
   } else if (bytes_read != 0) {
-    c.updateTime();
+    c.updateLastMessageTime();
     c.request.feed(buffer, bytes_read);
     memset(buffer, 0, sizeof(buffer));
   }
@@ -303,7 +303,7 @@ void ManagerServ::sendCgiBody(Client &c, CgiController &cgi) {
     close(cgi.pipe_in[1]);
     close(cgi.pipe_out[1]);
   } else {
-    c.updateTime();
+    c.updateLastMessageTime();
     req_body = req_body.substr(bytes_sent);
   }
 }
@@ -337,7 +337,7 @@ void ManagerServ::readCgiResponse(Client &c, CgiController &cgi) {
     c.response.setErrorResponse(500);
     return;
   } else {
-    c.updateTime();
+    c.updateLastMessageTime();
     c.response._response_content.append(buffer, bytes_read);
     memset(buffer, 0, sizeof(buffer));
   }

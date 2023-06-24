@@ -3,23 +3,30 @@
 
 #include "Webserv.hpp"
 
+enum FileType {
+  FILE_TYPE = 1,
+  DIRECTORY_TYPE = 2,
+  OTHER_TYPE = 3,
+  INVALID_TYPE = -1,
+};
+
 class ConfigFile {
-	private:
-		std::string		_path;
-		size_t			_size;	// проверить нужен ли
+ private:
+  std::string path;
+  size_t size;
 
-	public:
-		ConfigFile();
-		ConfigFile(std::string const path);
-		~ConfigFile();
+ public:
+  ConfigFile();
+  ConfigFile(std::string const path);
+  ~ConfigFile();
 
-		static int getTypePath(std::string const path);
-		static int checkFile(std::string const path, int mode);
-		std::string	readFile(std::string path);
-		static int isFileExistAndReadable(std::string const path, std::string const index);
+  static int getTypePath(std::string const path);
+  static int checkAccessFile(std::string const path, int mode);
+  std::string readFile(std::string path);
+  static int isFileExistAndReadable(std::string const path, std::string const index);
 
-		std::string getPath();
-		int getSize();
+  std::string getPath();
+  int getSize();
 };
 
 #endif

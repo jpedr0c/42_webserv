@@ -164,7 +164,7 @@ void Server::setErrorPages(std::vector<std::string> &parametr) {
     if (ConfigFile::getTypePath(path) != 2) {
       if (ConfigFile::getTypePath(this->_root + path) != 1)
         throw ErrorException("Incorrect path for error page file: " + this->_root + path);
-      if (ConfigFile::checkFile(this->_root + path, 0) == -1 || ConfigFile::checkFile(this->_root + path, 4) == -1)
+      if (ConfigFile::checkAccessFile(this->_root + path, 0) == -1 || ConfigFile::checkAccessFile(this->_root + path, 4) == -1)
         throw ErrorException("Error page file :" + this->_root + path + " is not accessible");
     }
     std::map<short, std::string>::iterator it = this->_error_pages.find(code_error);
@@ -308,7 +308,7 @@ bool Server::isValidErrorPages() {
   for (it = this->_error_pages.begin(); it != this->_error_pages.end(); it++) {
     if (it->first < 100 || it->first > 599)
       return (false);
-    if (ConfigFile::checkFile(getRoot() + it->second, 0) < 0 || ConfigFile::checkFile(getRoot() + it->second, 4) < 0)
+    if (ConfigFile::checkAccessFile(getRoot() + it->second, 0) < 0 || ConfigFile::checkAccessFile(getRoot() + it->second, 4) < 0)
       return (false);
   }
   return (true);
@@ -320,14 +320,14 @@ int Server::isValidLocation(Location &location) const {
     if (location.getCgiPath().empty() || location.getCgiExtension().empty() || location.getIndexLocation().empty())
       return (1);
 
-    if (ConfigFile::checkFile(location.getIndexLocation(), 4) < 0) {
+    if (ConfigFile::checkAccessFile(location.getIndexLocation(), 4) < 0) {
       std::string path = location.getRootLocation() + location.getPath() + "/" + location.getIndexLocation();
       if (ConfigFile::getTypePath(path) != 1) {
         std::string root = getcwd(NULL, 0);
         location.setRootLocation(root);
         path = root + location.getPath() + "/" + location.getIndexLocation();
       }
-      if (path.empty() || ConfigFile::getTypePath(path) != 1 || ConfigFile::checkFile(path, 4) < 0)
+      if (path.empty() || ConfigFile::getTypePath(path) != 1 || ConfigFile::checkAccessFile(path, 4) < 0)
         return (1);
     }
     if (location.getCgiPath().size() != location.getCgiExtension().size())

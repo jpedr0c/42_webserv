@@ -91,7 +91,7 @@ int Parser::createCluster(const std::string &filePath) {
   if (file.getTypePath(filePath) != 1)
     throw Error("File is invalid");
 
-  int isFileReadable = file.checkFile(filePath, R_OK);
+  int isFileReadable = file.checkAccessFile(filePath, R_OK);
 
   if (isFileReadable == -1)
     throw Error("File is not accessible");
