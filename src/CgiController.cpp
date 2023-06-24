@@ -75,7 +75,7 @@ const std::string &CgiController::getCgiPath() const {
 }
 
 void CgiController::initEnvCgi(Request &req, const std::vector<Location>::iterator it_loc) {
-  std::string cgi_exec = ("cgi-bin/" + it_loc->getCgiPath()[0]).c_str();
+  std::string cgi_exec = ("cgi/" + it_loc->getCgiPath()[0]).c_str();
   char *cwd = getcwd(NULL, 0);
   if (_cgi_path[0] != '/') {
     std::string tmp(cwd);
@@ -139,7 +139,7 @@ void CgiController::initEnv(Request &req, const std::vector<Location>::iterator 
   this->_env["CONTENT_LENGTH"] = req.getHeader("content-length");
   this->_env["CONTENT_TYPE"] = req.getHeader("content-type");
   this->_env["GATEWAY_INTERFACE"] = "CGI/1.1";
-  poz = findStart(this->_cgi_path, "cgi-bin/");
+  poz = findStart(this->_cgi_path, "cgi/");
   this->_env["SCRIPT_NAME"] = this->_cgi_path;
   this->_env["SCRIPT_FILENAME"] = ((poz < 0 || (size_t)(poz + 8) > this->_cgi_path.size()) ? "" : this->_cgi_path.substr(poz + 8, this->_cgi_path.size()));  // check dif cases after put right parametr from the response
   this->_env["PATH_INFO"] = getPathInfo(req.getPath(), it_loc->getCgiExtension());

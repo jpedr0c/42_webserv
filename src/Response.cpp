@@ -167,9 +167,9 @@ int Response::handleCgi(std::string &location_key) {
   path = this->request.getPath();
   if (path[0] && path[0] == '/')
     path.erase(0, 1);
-  if (path == "cgi-bin")
+  if (path == "cgi")
     path += "/" + _server.getLocationKey(location_key)->getIndexLocation();
-  else if (path == "cgi-bin/")
+  else if (path == "cgi/")
     path.append(_server.getLocationKey(location_key)->getIndexLocation());
 
   pos = path.find(".");
@@ -240,7 +240,7 @@ int Response::handleTarget() {
     if (checkReturn(target_location, _code, _location))
       return (1);
 
-    if (target_location.getPath().find("cgi-bin") != std::string::npos) {
+    if (target_location.getPath().find("cgi") != std::string::npos) {
       return (handleCgi(location_key));
     }
 

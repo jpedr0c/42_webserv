@@ -9,11 +9,11 @@ path = os.path
 def check_file() -> str:
     if "image_input" in uploaded:
         uploaded_file = uploaded["image_input"]
-        if not path.exists("./cgi-bin/tmp"):
-            os.makedirs("./cgi-bin/tmp")
-        file_path = "./cgi-bin/tmp/" + path.basename(uploaded_file.filename)
+        if not path.exists("./cgi/tmp"):
+            os.makedirs("./cgi/tmp")
+        file_path = "./cgi/tmp/" + path.basename(uploaded_file.filename)
         open(file_path, "wb").write(uploaded_file.file.read())
-        return "The file " + path.basename(uploaded_file.filename) + " was uploaded to " + os.getcwd() + "/cgi-bin/tmp"
+        return "The file " + path.basename(uploaded_file.filename) + " was uploaded to " + os.getcwd() + "/cgi/tmp"
     else:
         return "Error: uploading failed"
 
