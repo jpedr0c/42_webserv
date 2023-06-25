@@ -9,23 +9,23 @@ Parser::~Parser() {}
 /* printing parametrs of servers from config file */
 int Parser::print() {
   std::cout << "------------- Config -------------" << std::endl;
-  for (size_t i = 0; i < _servers.size(); i++) {
+  for (size_t i = 0; i < serv.size(); i++) {
     std::cout << "Server #" << i + 1 << std::endl;
-    std::cout << "Server name: " << _servers[i].getServerName() << std::endl;
-    std::cout << "Host: " << _servers[i].getHost() << std::endl;
-    std::cout << "Root: " << _servers[i].getRoot() << std::endl;
-    std::cout << "Index: " << _servers[i].getIndex() << std::endl;
-    std::cout << "Port: " << _servers[i].getPort() << std::endl;
-    std::cout << "Max BSize: " << _servers[i].getClientMaxBodySize() << std::endl;
-    std::cout << "Error pages: " << _servers[i].getErrorPages().size() << std::endl;
-    std::map<short, std::string>::const_iterator it = _servers[i].getErrorPages().begin();
-    while (it != _servers[i].getErrorPages().end()) {
+    std::cout << "Server name: " << serv[i].getServerName() << std::endl;
+    std::cout << "Host: " << serv[i].getHost() << std::endl;
+    std::cout << "Root: " << serv[i].getRoot() << std::endl;
+    std::cout << "Index: " << serv[i].getIndex() << std::endl;
+    std::cout << "Port: " << serv[i].getPort() << std::endl;
+    std::cout << "Max BSize: " << serv[i].getClientMaxBodySize() << std::endl;
+    std::cout << "Error pages: " << serv[i].getErrorPages().size() << std::endl;
+    std::map<short, std::string>::const_iterator it = serv[i].getErrorPages().begin();
+    while (it != serv[i].getErrorPages().end()) {
       std::cout << (*it).first << " - " << it->second << std::endl;
       ++it;
     }
-    std::cout << "Locations: " << _servers[i].getLocations().size() << std::endl;
-    std::vector<Location>::const_iterator itl = _servers[i].getLocations().begin();
-    while (itl != _servers[i].getLocations().end()) {
+    std::cout << "Locations: " << serv[i].getLocations().size() << std::endl;
+    std::vector<Location>::const_iterator itl = serv[i].getLocations().begin();
+    while (itl != serv[i].getLocations().end()) {
       std::cout << "name location: " << itl->getPath() << std::endl;
       std::cout << "methods: " << itl->getPrintMethods() << std::endl;
       std::cout << "index: " << itl->getIndexLocation() << std::endl;
@@ -42,7 +42,7 @@ int Parser::print() {
       }
       ++itl;
     }
-    itl = _servers[i].getLocations().begin();
+    itl = serv[i].getLocations().begin();
     std::cout << "-----------------------------" << std::endl;
   }
   return (0);
@@ -109,7 +109,7 @@ int Parser::createCluster(const std::string &filePath) {
   for (size_t i = 0; i < this->numberOfServers; i++) {
     Server server;
     createServer(this->_server_config[i], server);
-    this->_servers.push_back(server);
+    this->serv.push_back(server);
   }
 
   if (this->numberOfServers > 1)
@@ -307,8 +307,8 @@ void Parser::checkServers() {
   std::vector<Server>::iterator it1;
   std::vector<Server>::iterator it2;
 
-  for (it1 = this->_servers.begin(); it1 != this->_servers.end() - 1; it1++) {
-    for (it2 = it1 + 1; it2 != this->_servers.end(); it2++) {
+  for (it1 = this->serv.begin(); it1 != this->serv.end() - 1; it1++) {
+    for (it2 = it1 + 1; it2 != this->serv.end(); it2++) {
       if (it1->getPort() == it2->getPort() && it1->getHost() == it2->getHost() && it1->getServerName() == it2->getServerName())
         throw ErrorException("Failed server validation");
     }
@@ -316,5 +316,5 @@ void Parser::checkServers() {
 }
 
 std::vector<Server> Parser::getServers() {
-  return (this->_servers);
+  return (this->serv);
 }

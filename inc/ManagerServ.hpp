@@ -10,20 +10,20 @@ class ManagerServ {
   ManagerServ();
   ~ManagerServ();
   void setupServers(std::vector<Server>);
-  void runServers();
+  void processServerRequests();
 
  private:
-  std::vector<Server> _servers;
-  std::map<int, Server> _servers_map;
-  std::map<int, Client> _clients_map;
-  fd_set _recv_fd_pool;
-  fd_set _write_fd_pool;
-  int _biggest_fd;
+  std::vector<Server> serv;
+  std::map<int, Server> servsDict;
+  std::map<int, Client> clientsDict;
+  fd_set receiveFdSet;
+  fd_set writeFdSet;
+  int largestFd;
 
   void acceptNewConnection(Server &);
-  void checkTimeout();
+  void handleClientTimeout();
   void initializeSets();
-  void readRequest(const int &, Client &);
+  void readAndProcessRequest(const int &, Client &);
   void handleReqBody(Client &);
   void sendResponse(const int &, Client &);
   void sendCgiBody(Client &, CgiController &);
@@ -32,6 +32,8 @@ class ManagerServ {
   void assignServer(Client &);
   void addToSet(const int, fd_set &);
   void removeFromSet(const int, fd_set &);
+
+  bool checkServ(Client &client, std::vector<Server>::iterator it);
 };
 
 #endif

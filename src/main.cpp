@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
     ManagerServ managerServ;
     serverParser.createCluster(configFile);
     managerServ.setupServers(serverParser.getServers());
-    managerServ.runServers();
+    managerServ.processServerRequests();
   } catch (std::exception &err) {
     return error(err.what());
   }

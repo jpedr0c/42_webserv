@@ -7,7 +7,7 @@ class Server;
 
 class Parser {
  private:
-  std::vector<Server> _servers;
+  std::vector<Server> serv;
   std::vector<std::string> _server_config;
   size_t numberOfServers;
 
