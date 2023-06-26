@@ -38,7 +38,7 @@
         </div>
         <div class="flex flex-col space-y-2">
           <h1 class="text-2xl">Get cookie</h1>
-        
+
           <form
             action="../cgi/get_cookie.py"
             method="get"
@@ -56,28 +56,6 @@
               class="py-2 px-5 bg-purple-500 rounded-md w-2/5"
             >
               Get
-            </button>
-          </form>
-        </div>
-        <div class="flex flex-col space-y-2">
-          <h1 class="text-2xl">Delete cookie</h1>
-          <form
-            action="../cgi/remove_cookie.py"
-            method="get"
-            class="flex flex-row items-center p-8 bg-slate-800 space-x-2 rounded-md"
-          >
-            <input
-              type="text"
-              placeholder="Cookie Key"
-              name="key"
-              class="p-2 rounded-md bg-slate-700 outline-none focus:ring-2 focus:ring-purple-500 w-3/5"
-              required
-            />
-            <button
-              type="submit"
-              class="py-2 px-5 bg-purple-500 rounded-md w-2/5"
-            >
-              Delete
             </button>
           </form>
         </div>
