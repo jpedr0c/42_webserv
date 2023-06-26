@@ -12,37 +12,47 @@
       <form
         action="../cgi/get_cookie.py"
         method="get"
-        class="flex flex-col w-96 p-8 space-y-4 bg-slate-800 rounded-md"
+        class="flex flex-col w-96 p-8 bg-slate-800 rounded-md"
       >
-        <div class="flex flex-col space-y-1">
-          <label class="text-slate-300">Username: </label>
-          <input
-            type="text"
-            placeholder="Enter Username"
-            name="username"
-            class="p-2 rounded-md bg-slate-700 outline-none focus:ring-2 focus:ring-purple-500"
-            required
-          />
+        <div class="space-y-4">
+          <div class="flex justify-center w-full">
+            <h1 class="text-2xl text-slate-100">Login</h1>
+          </div>
+          <div class="flex flex-col space-y-1">
+            <label class="text-slate-300">Username: </label>
+            <input
+              type="text"
+              placeholder="Enter Username"
+              name="username"
+              class="p-2 rounded-md bg-slate-700 outline-none focus:ring-2 focus:ring-purple-500"
+              required
+            />
+          </div>
+          <div class="flex flex-col space-y-1">
+            <label class="text-slate-300">Password: </label>
+            <input
+              type="password"
+              placeholder="Enter Password"
+              name="password"
+              class="p-2 rounded-md bg-slate-700 outline-none focus:ring-2 focus:ring-purple-500"
+              required
+            />
+          </div>
         </div>
-        <div class="flex flex-col space-y-1">
-          <label class="text-slate-300">Password: </label>
-          <input
-            type="password"
-            placeholder="Enter Password"
-            name="password"
-            class="p-2 rounded-md bg-slate-700 outline-none focus:ring-2 focus:ring-purple-500"
-            required
-          />
+        <div class="flex w-full justify-end p-2">
+          <a href="register.html" class="text-slate-300">Register</a>
         </div>
-        <button type="submit" class="py-2 bg-purple-500 rounded-md">
-          Login
-        </button>
-        <a
-          href="index.html"
-          class="py-2 text-center ring-2 ring-purple-500 rounded-md"
-        >
-          Voltar
-        </a>
+        <div class="flex flex-col w-full space-y-4">
+          <button type="submit" class="py-2 bg-purple-500 rounded-md">
+            Login
+          </button>
+          <a
+            href="index.html"
+            class="py-2 text-center ring-2 ring-purple-500 rounded-md"
+          >
+            Voltar
+          </a>
+        </div>
       </form>
     </main>
   </body>
