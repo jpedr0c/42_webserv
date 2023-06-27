@@ -178,7 +178,7 @@ int Response::handleCgi(std::string &location_key) {
     return (1);
   }
   exten = path.substr(pos);
-  if (exten != ".py" && exten != ".sh") {
+  if (exten != ".py") {
     _code = 501;
     return (1);
   }
