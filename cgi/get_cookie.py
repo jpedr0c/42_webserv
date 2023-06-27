@@ -2,8 +2,9 @@
 
 import os
 from http import cookies
-# Import modules for CGI handling 
-import cgi, cgitb 
+
+# Import modules for CGI handling
+import cgi, cgitb
 
 uploaded_cookies = cgi.FieldStorage()
 key = uploaded_cookies.getvalue("key")
@@ -13,10 +14,29 @@ response_body = ["HTTP1.1 200 OK\n", "Content-type: text/html;charset=utf-8\n"]
 cookie = cookies.SimpleCookie()
 if "HTTP_COOKIE" in os.environ:
     cookie.load(os.environ["HTTP_COOKIE"])
+
 if key in cookie:
-    response_body.append(f"The value of cookie {key} is {cookie[key].value}")
+    value = cookie[key].value
 else:
-    response_body.append("Cookie was not found!")
+    value = "Not defined"
 
+response_body = [
+    "HTTP/1.1 200 OK",
+    "Content-type: text/html;charset=utf-8\n",
+    "<html>",
+    "<head>",
+    "<title>Current Time</title>",
+    '<script src="https://cdn.tailwindcss.com"></script>',
+    "</head>",
+    '<body class="bg-slate-900 h-screen w-screen flex justify-center items-center text-slate-100">',
+    '<div class="flex flex-col space-y-7 flex justify-center items-center p-10">',
+    '<div class="flex flex-col justify-center items-center space-y-3">',
+    f'<h1 class="font-bold text-3xl text-slate-400">The value of cookie <span class="underline">"{key}"</span> is:</h1>',
+    f'<code class="font-bold text-sm bg-slate-800 text-purple-400 p-3 rounded-md md:text-xl">{value}</code>',
+    "</div>",
+    '<a href="../cookies.html"class="py-2 px-7 text-center ring-2 ring-purple-500 rounded-md">Back to cookies</a>',
+    "</div>",
+    "</body>",
+    "</html>",
+]
 [print(i) for i in response_body]
-
