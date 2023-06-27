@@ -77,11 +77,11 @@
       const submitButton = document.getElementById('submitButton');
 
       const handleClick = (e) => {
-        const inputs = document.querySelectorAll(
-          '#createCookieForm input[type="text"]'
-        );
-
-        const inputValues = [...inputs.values()].map((input) => input.value);
+        const inputValues = [
+          ...document
+            .querySelectorAll('#createCookieForm input[type="text"]')
+            .values(),
+        ].map((input) => input.value);
 
         if (!inputValues.every((val) => val.length)) return;
 
