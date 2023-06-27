@@ -8,10 +8,8 @@ Location::Location() {
   this->returns = "";
   this->alias = "";
   this->maxBodySize = MAX_CONTENT_LENGTH;
-  this->methods.reserve(5);
+  this->methods.reserve(3);
   this->methods.push_back(1);
-  this->methods.push_back(0);
-  this->methods.push_back(0);
   this->methods.push_back(0);
   this->methods.push_back(0);
 }
@@ -59,13 +57,10 @@ void Location::setRootLocation(std::string param) {
     throw Error("Error: Invalid root location");
 }
 
-// FIXME: change methods
 void Location::setMethods(std::vector<std::string> methods) {
   this->methods[0] = 0;
   this->methods[1] = 0;
   this->methods[2] = 0;
-  this->methods[3] = 0;
-  this->methods[4] = 0;
 
   for (size_t i = 0; i < methods.size(); i++) {
     if (methods[i] == "GET")
@@ -74,10 +69,6 @@ void Location::setMethods(std::vector<std::string> methods) {
       this->methods[1] = 1;
     else if (methods[i] == "DELETE")
       this->methods[2] = 1;
-    else if (methods[i] == "PUT")
-      this->methods[3] = 1;
-    else if (methods[i] == "HEAD")
-      this->methods[4] = 1;
     else
       throw Error("Error: Unsupported HTTP method: " + methods[i]);
   }
@@ -169,32 +160,4 @@ const std::map<std::string, std::string> &Location::getExtensionPath() const {
 
 const unsigned long &Location::getMaxBodySize() const {
   return (this->maxBodySize);
-}
-
-// FIXME: deletar após refatorar
-std::string Location::getPrintMethods() const {
-  std::string res;
-  if (methods[4])
-    res.insert(0, "HEAD");
-  if (methods[3]) {
-    if (!res.empty())
-      res.insert(0, ", ");
-    res.insert(0, "PUT");
-  }
-  if (methods[2]) {
-    if (!res.empty())
-      res.insert(0, ", ");
-    res.insert(0, "DELETE");
-  }
-  if (methods[1]) {
-    if (!res.empty())
-      res.insert(0, ", ");
-    res.insert(0, "POST");
-  }
-  if (methods[0]) {
-    if (!res.empty())
-      res.insert(0, ", ");
-    res.insert(0, "GET");
-  }
-  return (res);
 }

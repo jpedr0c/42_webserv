@@ -17,8 +17,7 @@ int ConfigFile::getTypePath(std::string const path) {
     return (FILE_TYPE);
   if (buffer.st_mode & S_IFDIR)
     return (DIRECTORY_TYPE);
-  else
-    return (OTHER_TYPE);
+  return (OTHER_TYPE);
 }
 
 int ConfigFile::checkAccessFile(std::string const path, int mode) {

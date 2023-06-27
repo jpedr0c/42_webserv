@@ -6,48 +6,6 @@ Parser::Parser() {
 
 Parser::~Parser() {}
 
-/* printing parametrs of servers from config file */
-int Parser::print() {
-  std::cout << "------------- Config -------------" << std::endl;
-  for (size_t i = 0; i < serv.size(); i++) {
-    std::cout << "Server #" << i + 1 << std::endl;
-    std::cout << "Server name: " << serv[i].getServerName() << std::endl;
-    std::cout << "Host: " << serv[i].getHost() << std::endl;
-    std::cout << "Root: " << serv[i].getRoot() << std::endl;
-    std::cout << "Index: " << serv[i].getIndex() << std::endl;
-    std::cout << "Port: " << serv[i].getPort() << std::endl;
-    std::cout << "Max BSize: " << serv[i].getClientMaxBodySize() << std::endl;
-    std::cout << "Error pages: " << serv[i].getErrorPages().size() << std::endl;
-    std::map<short, std::string>::const_iterator it = serv[i].getErrorPages().begin();
-    while (it != serv[i].getErrorPages().end()) {
-      std::cout << (*it).first << " - " << it->second << std::endl;
-      ++it;
-    }
-    std::cout << "Locations: " << serv[i].getLocations().size() << std::endl;
-    std::vector<Location>::const_iterator itl = serv[i].getLocations().begin();
-    while (itl != serv[i].getLocations().end()) {
-      std::cout << "name location: " << itl->getPath() << std::endl;
-      std::cout << "methods: " << itl->getPrintMethods() << std::endl;
-      std::cout << "index: " << itl->getIndexLocation() << std::endl;
-      if (itl->getCgiPath().empty()) {
-        std::cout << "root: " << itl->getRootLocation() << std::endl;
-        if (!itl->getReturn().empty())
-          std::cout << "return: " << itl->getReturn() << std::endl;
-        if (!itl->getAlias().empty())
-          std::cout << "alias: " << itl->getAlias() << std::endl;
-      } else {
-        std::cout << "cgi root: " << itl->getRootLocation() << std::endl;
-        std::cout << "sgi_path: " << itl->getCgiPath().size() << std::endl;
-        std::cout << "sgi_ext: " << itl->getCgiExtension().size() << std::endl;
-      }
-      ++itl;
-    }
-    itl = serv[i].getLocations().begin();
-    std::cout << "-----------------------------" << std::endl;
-  }
-  return (0);
-}
-
 const std::string Parser::removeComments(std::string &string) {
   int hashtagIndex = string.find('#');
 

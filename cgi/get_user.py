@@ -31,5 +31,4 @@ response_body = [
     "</body>",
     "</html>",
 ]
-print(os.environ["QUERY_STRING"], file=sys.stderr)
 [print(i) for i in response_body]

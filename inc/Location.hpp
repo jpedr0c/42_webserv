@@ -47,9 +47,6 @@ class Location {
   const std::vector<std::string> &getCgiExtension() const;
   const std::map<std::string, std::string> &getExtensionPath() const;
   const unsigned long &getMaxBodySize() const;
-
-  // FIXME: não esquecer de deletar aqui também
-  std::string getPrintMethods() const;
 };
 
 #endif
