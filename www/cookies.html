@@ -74,16 +74,18 @@
       </section>
     </main>
     <script>
-      const createCookieForm = document.getElementById('createCookieForm');
       const submitButton = document.getElementById('submitButton');
 
-      const handleClick = () => {
+      const handleClick = (e) => {
         const inputs = document.querySelectorAll(
           '#createCookieForm input[type="text"]'
         );
+
         const inputValues = [...inputs.values()].map((input) => input.value);
-        if (inputValues.every((val) => val.length))
-          alert('Cookie created successfully');
+
+        if (!inputValues.every((val) => val.length)) return;
+
+        alert('Cookie created successfully');
       };
 
       submitButton.addEventListener('click', handleClick);
