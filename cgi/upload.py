@@ -34,7 +34,7 @@ response_body = [
     '<h1 class="font-bold text-3xl text-slate-400">Image uploaded to:</h1>',
     f'<code class="font-bold text-sm bg-slate-800 text-purple-400 p-3 rounded-md md:text-xl">{image_path}</code>',
     "</div>",
-    '<a href="../index.html"class="py-2 px-7 text-center ring-2 ring-purple-500 rounded-md hover:scale-105 transition-all duration-300">Back to home</a>',
+    '<a href="../index.html"class="py-2 px-7 text-center ring-2 ring-purple-500 rounded-md transition-all duration-300">Back to home</a>',
     "</div>",
     "</body>",
     "</html>",
