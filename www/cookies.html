@@ -12,8 +12,8 @@
         <div class="flex flex-col space-y-2">
           <h1 class="text-2xl">Create cookie</h1>
           <form
+            id="createCookieForm"
             action="../cgi/set_cookie.py"
-            method="get"
             class="flex flex-row items-center p-8 bg-slate-800 space-x-2 rounded-md"
           >
             <input
@@ -34,7 +34,7 @@
               required
             />
             <button
-              id="create"
+              id="submitButton"
               type="submit"
               class="py-2 px-5 bg-purple-500 rounded-md hover:bg-purple-600 transition-all duration-300"
             >
@@ -74,22 +74,19 @@
       </section>
     </main>
     <script>
-      const inputKey = document.getElementById('key');
-      const inputValue = document.getElementById('value');
-      const btnCreate = document.getElementById('create');
+      const createCookieForm = document.getElementById('createCookieForm');
+      const submitButton = document.getElementById('submitButton');
 
-      btnCreate.addEventListener('click', () => {
-        if (inputKey.value != '' && inputValue.value != '')
-          alert('Cookie successfully created');
-      });
+      const handleClick = () => {
+        const inputs = document.querySelectorAll(
+          '#createCookieForm input[type="text"]'
+        );
+        const inputValues = [...inputs.values()].map((input) => input.value);
+        if (inputValues.every((val) => val.length))
+          alert('Cookie created successfully');
+      };
 
-      inputKey.addEventListener('focus', () => {
-        if (inputKey.value != '') inputKey.value = '';
-      });
-
-      inputValue.addEventListener('focus', () => {
-        if (inputValue.value != '') inputValue.value = '';
-      });
+      submitButton.addEventListener('click', handleClick);
     </script>
   </body>
 </html>
