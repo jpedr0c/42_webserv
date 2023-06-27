@@ -17,6 +17,7 @@
             class="flex flex-row items-center p-8 bg-slate-800 space-x-2 rounded-md"
           >
             <input
+              id="key"
               type="text"
               placeholder="key"
               name="key"
@@ -25,13 +26,14 @@
             />
             <p class="font-semibold">=</p>
             <input
+              id="value"
               type="text"
               placeholder="value"
               name="value"
               class="p-2 rounded-md bg-slate-700 outline-none focus:ring-2 focus:ring-purple-500"
               required
             />
-            <button type="submit" class="py-2 px-5 bg-purple-500 rounded-md">
+            <button id="create" type="submit" class="py-2 px-5 bg-purple-500 rounded-md hover:bg-purple-600 transition-all duration-300">
               Create
             </button>
           </form>
@@ -53,7 +55,7 @@
             />
             <button
               type="submit"
-              class="py-2 px-5 bg-purple-500 rounded-md w-2/5"
+              class="py-2 px-5 bg-purple-500 rounded-md w-2/5 hover:bg-purple-600 transition-all duration-300"
             >
               Get
             </button>
@@ -61,11 +63,31 @@
         </div>
         <a
           href="index.html"
-          class="py-2 text-center ring-2 ring-purple-500 rounded-md"
+          class="py-2 text-center ring-2 ring-purple-500 rounded-md hover:scale-105 transition-all duration-300"
         >
           Back to home
         </a>
       </section>
     </main>
+    <script>
+      const inputKey = document.getElementById("key");
+      const inputValue = document.getElementById("value");
+      const btnCreate = document.getElementById("create");
+      
+      btnCreate.addEventListener("click", () => {
+        if (inputKey.value != "" && inputValue.value != "")
+          alert("Cookie successfully created");
+      });
+
+      inputKey.addEventListener("focus", () => {
+        if (inputKey.value != "")
+          inputKey.value = "";
+      });
+
+      inputValue.addEventListener("focus", () => {
+        if (inputValue.value != "")
+          inputValue.value = "";
+      });
+    </script>
   </body>
 </html>
