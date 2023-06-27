@@ -33,3 +33,4 @@
 *.app
 
 webserv
+cgi/tmp/*
