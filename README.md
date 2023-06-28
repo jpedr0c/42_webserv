@@ -1,3 +1,3 @@
 # 42_webserv
 
-🚧 In progress 🚧
+🚧 Project in progress 🚧
