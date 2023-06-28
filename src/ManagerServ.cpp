@@ -44,9 +44,9 @@ void ManagerServ::processServerRequests() {
         readAndProcessRequest(i, clientsDict[i]);
       else if (FD_ISSET(i, &writeFdCopy) && clientsDict.count(i)) {
         int cgi_state = clientsDict[i].response.getCgiState();
-        if (cgi_state == 1 && FD_ISSET(clientsDict[i].response._cgi_obj.pipe_in[1], &writeFdCopy))
+        if (cgi_state == 1 && FD_ISSET(clientsDict[i].response._cgi_obj.pipeIn[1], &writeFdCopy))
           sendCgiBody(clientsDict[i], clientsDict[i].response._cgi_obj);
-        else if (cgi_state == 1 && FD_ISSET(clientsDict[i].response._cgi_obj.pipe_out[0], &receivedFdCopy))
+        else if (cgi_state == 1 && FD_ISSET(clientsDict[i].response._cgi_obj.pipeOut[0], &receivedFdCopy))
           readCgiResponse(clientsDict[i], clientsDict[i].response._cgi_obj);
         else if ((cgi_state == 0 || cgi_state == 2) && FD_ISSET(i, &writeFdCopy))
           sendResponse(i, clientsDict[i]);
@@ -186,8 +186,8 @@ void ManagerServ::readAndProcessRequest(const int &i, Client &client) {
     client.buildResponse();
     if (client.response.getCgiState()) {
       handleReqBody(client);
-      addToSet(client.response._cgi_obj.pipe_in[1], writeFdSet);
-      addToSet(client.response._cgi_obj.pipe_out[0], receiveFdSet);
+      addToSet(client.response._cgi_obj.pipeIn[1], writeFdSet);
+      addToSet(client.response._cgi_obj.pipeOut[0], receiveFdSet);
     }
     removeFromSet(i, receiveFdSet);
     addToSet(i, writeFdSet);
@@ -213,20 +213,20 @@ void ManagerServ::sendCgiBody(Client &client, CgiController &cgi) {
   if (req_body.empty())
     bytesSent = 0;
   else if (req_body.length() >= 40000)
-    bytesSent = write(cgi.pipe_in[1], req_body.c_str(), 40000);
+    bytesSent = write(cgi.pipeIn[1], req_body.c_str(), 40000);
   else
-    bytesSent = write(cgi.pipe_in[1], req_body.c_str(), req_body.length());
+    bytesSent = write(cgi.pipeIn[1], req_body.c_str(), req_body.length());
 
   if (bytesSent < 0) {
     LogService::printLog(RED, SUCCESS, "sendCgiBody() Error Sending: %s", strerror(errno));
-    removeFromSet(cgi.pipe_in[1], writeFdSet);
-    close(cgi.pipe_in[1]);
-    close(cgi.pipe_out[1]);
+    removeFromSet(cgi.pipeIn[1], writeFdSet);
+    close(cgi.pipeIn[1]);
+    close(cgi.pipeOut[1]);
     client.response.setErrorResponse(500);
   } else if (bytesSent == 0 || static_cast<size_t>(bytesSent) == req_body.length()) {
-    removeFromSet(cgi.pipe_in[1], writeFdSet);
-    close(cgi.pipe_in[1]);
-    close(cgi.pipe_out[1]);
+    removeFromSet(cgi.pipeIn[1], writeFdSet);
+    close(cgi.pipeIn[1]);
+    close(cgi.pipeOut[1]);
   } else {
     client.updateLastMessageTime();
     req_body = req_body.substr(bytesSent);
@@ -236,12 +236,12 @@ void ManagerServ::sendCgiBody(Client &client, CgiController &cgi) {
 void ManagerServ::readCgiResponse(Client &client, CgiController &cgi) {
   char buffer[40000 * 2];
   int bytesRead = 0;
-  bytesRead = read(cgi.pipe_out[0], buffer, 40000 * 2);
+  bytesRead = read(cgi.pipeOut[0], buffer, 40000 * 2);
 
   if (bytesRead == 0) {
-    removeFromSet(cgi.pipe_out[0], receiveFdSet);
-    close(cgi.pipe_in[0]);
-    close(cgi.pipe_out[0]);
+    removeFromSet(cgi.pipeOut[0], receiveFdSet);
+    close(cgi.pipeIn[0]);
+    close(cgi.pipeOut[0]);
     int status;
     waitpid(cgi.getCgiPid(), &status, 0);
     if (WEXITSTATUS(status) != 0)
@@ -253,9 +253,9 @@ void ManagerServ::readCgiResponse(Client &client, CgiController &cgi) {
     return;
   } else if (bytesRead < 0) {
     LogService::printLog(RED, SUCCESS, "readCgiResponse() Error Reading From CGI Script: ", strerror(errno));
-    removeFromSet(cgi.pipe_out[0], receiveFdSet);
-    close(cgi.pipe_in[0]);
-    close(cgi.pipe_out[0]);
+    removeFromSet(cgi.pipeOut[0], receiveFdSet);
+    close(cgi.pipeIn[0]);
+    close(cgi.pipeOut[0]);
     client.response.setCgiState(2);
     client.response.setErrorResponse(500);
     return;
