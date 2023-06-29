@@ -6,11 +6,6 @@
 class Server;
 
 class Parser {
- private:
-  std::vector<Server> serv;
-  std::vector<std::string> _server_config;
-  size_t numberOfServers;
-
  public:
   Parser();
   ~Parser();
@@ -23,27 +18,19 @@ class Parser {
   const std::string extractServersConfig(std::string &fileContent);
   size_t findStartServer(size_t start, std::string &content);
   size_t findEndServer(size_t start, std::string &content);
+  bool areServersDuplicate(Server &currentServer, Server &nextServer);
   void createServer(std::string &config, Server &server);
   void checkServers();
   std::vector<Server> getServers();
   int stringCompare(std::string str1, std::string str2, size_t pos);
 
-  int print();
+  void validateServerParametersSize(const std::vector<std::string> &parameters);
+  void validateDuplicatePort(Server &server);
 
- public:
-  class ErrorException : public std::exception {
-   private:
-    std::string _message;
-
-   public:
-    ErrorException(std::string message) throw() {
-      _message = "CONFIG PARSER ERROR: " + message;
-    }
-    virtual const char *what() const throw() {
-      return (_message.c_str());
-    }
-    virtual ~ErrorException() throw() {}
-  };
+ private:
+  std::vector<Server> serverList;
+  std::vector<std::string> serverConfig;
+  size_t numberOfServers;
 };
 
 #endif
