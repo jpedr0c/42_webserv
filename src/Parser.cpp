@@ -34,6 +34,27 @@ const std::string Parser::removeSpaces(std::string &string) {
   return string;
 }
 
+size_t Parser::findStartServer(size_t start, std::string &content) {
+  size_t i;
+
+  for (i = start; content[i]; i++) {
+    if (content[i] == 's')
+      break;
+    if (!isspace(content[i]))
+      throw ErrorException("Wrong character out of server scope{}");
+  }
+  if (!content[i])
+    return (start);
+  if (content.compare(i, 6, "server") != 0)
+    throw ErrorException("Wrong character out of server scope{}");
+  i += 6;
+  while (content[i] && isspace(content[i]))
+    i++;
+  if (content[i] == '{')
+    return (i);
+  throw ErrorException("Wrong character out of server scope{}");
+}
+
 const std::string Parser::extractServersConfig(std::string &fileContent) {
   std::string contentWithoutComments = this->removeComments(fileContent);
   std::string contentWithoutSpaces = this->removeSpaces(contentWithoutComments);
@@ -94,29 +115,6 @@ void Parser::splitServers(std::string &content) {
     this->numberOfServers++;
     start = end + 1;
   }
-}
-
-/* finding a server begin and return the index of { start of server */
-size_t Parser::findStartServer(size_t start, std::string &content) {
-  size_t i;
-
-  for (i = start; content[i]; i++) {
-    if (content[i] == 's')
-      break;
-    if (!isspace(content[i]))
-      throw ErrorException("Wrong character out of server scope{}");
-  }
-  if (!content[i])
-    return (start);
-  if (content.compare(i, 6, "server") != 0)
-    throw ErrorException("Wrong character out of server scope{}");
-  i += 6;
-  while (content[i] && isspace(content[i]))
-    i++;
-  if (content[i] == '{')
-    return (i);
-  else
-    throw ErrorException("Wrong character out of server scope{}");
 }
 
 /* finding a server end and return the index of } end of server */
