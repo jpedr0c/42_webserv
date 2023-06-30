@@ -518,54 +518,70 @@ int Response::getCgiState() {
   return (cgi);
 }
 
-std::string Response::removeBoundary(std::string &body, std::string &boundary) {
-  std::string buffer;
-  std::string new_body;
+std::string Response::extractFilename(const std::string &line) {
   std::string filename;
-  bool is_boundary = false;
-  bool is_content = false;
+  size_t start = line.find("filename=\"");
+  if (start != std::string::npos) {
+    size_t end = line.find("\"", start + 10);
+    if (end != std::string::npos) {
+      filename = line.substr(start + 10, end - (start + 10));
+    }
+  }
+  return filename;
+}
+
+bool Response::isBoundaryLine(const std::string &line, const std::string &boundary) {
+  return (line.compare("--" + boundary + "\r") == 0);
+}
+
+bool Response::isEndBoundaryLine(const std::string &line, const std::string &boundary) {
+  return (line.compare("--" + boundary + "--\r") == 0);
+}
+
+std::string Response::removeBoundary(std::string &body, const std::string &boundary) {
+  std::string newBody;
+  std::string buffer;
+  std::string filename;
+  bool isBoundary = false;
+  bool isContent = false;
 
   if (body.find("--" + boundary) != std::string::npos && body.find("--" + boundary + "--") != std::string::npos) {
-    for (size_t i = 0; i < body.size(); i++) {
-      buffer.clear();
-      while (body[i] != '\n') {
-        buffer += body[i];
-        i++;
-      }
-      if (!buffer.compare(("--" + boundary + "--\r"))) {
-        is_content = true;
-        is_boundary = false;
-      }
-      if (!buffer.compare(("--" + boundary + "\r"))) {
-        is_boundary = true;
-      }
-      if (is_boundary) {
-        if (!buffer.compare(0, 31, "Content-Disposition: form-data;")) {
-          size_t start = buffer.find("filename=\"");
-          if (start != std::string::npos) {
-            size_t end = buffer.find("\"", start + 10);
-            if (end != std::string::npos)
-              filename = buffer.substr(start + 10, end);
-          }
-        } else if (!buffer.compare(0, 1, "\r") && !filename.empty()) {
-          is_boundary = false;
-          is_content = true;
-        }
+    std::string::size_type pos = 0;
+    std::string::size_type prevPos = 0;
+    while ((pos = body.find("\n", pos)) != std::string::npos) {
+      buffer = body.substr(prevPos, pos - prevPos);
 
-      } else if (is_content) {
-        if (!buffer.compare(("--" + boundary + "\r"))) {
-          is_boundary = true;
-        } else if (!buffer.compare(("--" + boundary + "--\r"))) {
-          new_body.erase(new_body.end() - 1);
-          break;
-        } else
-          new_body += (buffer + "\n");
+      if (isEndBoundaryLine(buffer, boundary)) {
+        isContent = true;
+        isBoundary = false;
       }
+
+      if (isBoundaryLine(buffer, boundary)) {
+        isBoundary = true;
+        filename = extractFilename(buffer);
+      }
+
+      if (isBoundary) {
+        if (!filename.empty() && buffer.compare("\r") == 0) {
+          isBoundary = false;
+          isContent = true;
+        }
+      } else if (isContent) {
+        if (isBoundaryLine(buffer, boundary)) {
+          isBoundary = true;
+        } else if (isEndBoundaryLine(buffer, boundary)) {
+          break;
+        } else {
+          newBody += (buffer + "\n");
+        }
+      }
+
+      prevPos = ++pos;
     }
   }
 
-  body.clear();
-  return (new_body);
+  body = newBody;
+  return body;
 }
 
 void Response::setCgiState(int state) {

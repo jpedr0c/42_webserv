@@ -31,7 +31,12 @@ class Response {
   bool initializeCgi(std::string &path, std::string &locationKey);
   CgiController cgiObj;
 
-  std::string removeBoundary(std::string &body, std::string &boundary);
+  std::string extractFilename(const std::string &line);
+  bool isBoundaryLine(const std::string &line, const std::string &boundary);
+  bool isEndBoundaryLine(const std::string &line, const std::string &boundary);
+  std::string removeBoundary(std::string &body, const std::string &boundary);
+
+  // std::string removeBoundary(std::string &body, std::string &boundary);
   std::string responseContent;
   bool hasMimeType(std::string &extension) const;
   std::string getMimeType(std::string extension) const;
