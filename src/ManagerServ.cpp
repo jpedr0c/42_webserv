@@ -44,10 +44,10 @@ void ManagerServ::processServerRequests() {
         readAndProcessRequest(i, clientsDict[i]);
       else if (FD_ISSET(i, &writeFdCopy) && clientsDict.count(i)) {
         int cgi_state = clientsDict[i].response.getCgiState();
-        if (cgi_state == 1 && FD_ISSET(clientsDict[i].response._cgi_obj.pipeIn[1], &writeFdCopy))
-          sendCgiBody(clientsDict[i], clientsDict[i].response._cgi_obj);
-        else if (cgi_state == 1 && FD_ISSET(clientsDict[i].response._cgi_obj.pipeOut[0], &receivedFdCopy))
-          readCgiResponse(clientsDict[i], clientsDict[i].response._cgi_obj);
+        if (cgi_state == 1 && FD_ISSET(clientsDict[i].response.cgiObj.pipeIn[1], &writeFdCopy))
+          sendCgiBody(clientsDict[i], clientsDict[i].response.cgiObj);
+        else if (cgi_state == 1 && FD_ISSET(clientsDict[i].response.cgiObj.pipeOut[0], &receivedFdCopy))
+          readCgiResponse(clientsDict[i], clientsDict[i].response.cgiObj);
         else if ((cgi_state == 0 || cgi_state == 2) && FD_ISSET(i, &writeFdCopy))
           sendResponse(i, clientsDict[i]);
       }
@@ -186,8 +186,8 @@ void ManagerServ::readAndProcessRequest(const int &i, Client &client) {
     client.buildResponse();
     if (client.response.getCgiState()) {
       handleReqBody(client);
-      addToSet(client.response._cgi_obj.pipeIn[1], writeFdSet);
-      addToSet(client.response._cgi_obj.pipeOut[0], receiveFdSet);
+      addToSet(client.response.cgiObj.pipeIn[1], writeFdSet);
+      addToSet(client.response.cgiObj.pipeOut[0], receiveFdSet);
     }
     removeFromSet(i, receiveFdSet);
     addToSet(i, writeFdSet);
@@ -198,7 +198,7 @@ void ManagerServ::handleReqBody(Client &client) {
   if (client.request.getBody().length() == 0) {
     std::string tmp;
     std::fstream file;
-    (client.response._cgi_obj.getCgiPath().c_str());
+    (client.response.cgiObj.getCgiPath().c_str());
     std::stringstream ss;
     ss << file.rdbuf();
     tmp = ss.str();
@@ -248,8 +248,8 @@ void ManagerServ::readCgiResponse(Client &client, CgiController &cgi) {
       client.response.setErrorResponse(502);
 
     client.response.setCgiState(2);
-    if (client.response._response_content.find("HTTP/1.1") == std::string::npos)
-      client.response._response_content.insert(0, "HTTP/1.1 200 OK\r\n");
+    if (client.response.responseContent.find("HTTP/1.1") == std::string::npos)
+      client.response.responseContent.insert(0, "HTTP/1.1 200 OK\r\n");
     return;
   } else if (bytesRead < 0) {
     LogService::printLog(RED, SUCCESS, "readCgiResponse() Error Reading From CGI Script: ", strerror(errno));
@@ -261,7 +261,7 @@ void ManagerServ::readCgiResponse(Client &client, CgiController &cgi) {
     return;
   } else {
     client.updateLastMessageTime();
-    client.response._response_content.append(buffer, bytesRead);
+    client.response.responseContent.append(buffer, bytesRead);
     memset(buffer, 0, sizeof(buffer));
   }
 }

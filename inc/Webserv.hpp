@@ -47,7 +47,6 @@
 #include "ConfigFile.hpp"
 #include "Location.hpp"
 #include "LogService.hpp"
-#include "Mime.hpp"
 #include "Parser.hpp"
 #include "Request.hpp"
 #include "Server.hpp"

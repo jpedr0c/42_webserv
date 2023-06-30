@@ -1,74 +1,75 @@
 #ifndef RESPONSE_HPP
-# define RESPONSE_HPP
+#define RESPONSE_HPP
 
-# include "Webserv.hpp"
-# include "Request.hpp"
+#include "Request.hpp"
+#include "Webserv.hpp"
 
+class Response {
+ public:
+  Response();
+  Response(Request &);
+  ~Response();
 
-/*
-    Responsible for building and storing the response. when response is ready, 
-    it will be stored on _response_content and can be used by func getRes().
-*/
-class Response
-{
-    public:
-        static     Mime _mime;
-        Response();
-        Response(Request&);
-        ~Response();
+  std::string getRes();
+  size_t getLen() const;
+  int getCode() const;
 
-        std::string     getRes();
-        size_t      getLen() const;
-        int         getCode() const;
+  void setRequest(Request &);
+  void setServer(Server &);
 
-        void        setRequest(Request &);
-        void        setServer(Server &);
+  void buildResponse();
+  void clear();
+  void handleCgi(Request &);
+  void cutRes(size_t);
+  int getCgiState();
+  void setCgiState(int);
+  void setErrorResponse(short code);
+  bool isValidPath(std::string &path, std::string &locationKey, size_t &pos);
+  bool isValidExtension(std::string &path);
+  bool isValidFileType(std::string &path);
+  bool isFileAllowed(Request &request, std::string &locationKey);
+  bool initializeCgi(std::string &path, std::string &locationKey);
+  CgiController cgiObj;
 
-        void        buildResponse();
-        void        clear();
-        void        handleCgi(Request&);
-        void        cutRes(size_t);
-        int         getCgiState();
-        void        setCgiState(int);
-        void        setErrorResponse(short code);
+  std::string removeBoundary(std::string &body, std::string &boundary);
+  std::string responseContent;
+  bool hasMimeType(std::string &extension) const;
+  std::string getMimeType(std::string extension) const;
 
-		CgiController		_cgi_obj;
+  Request request;
 
-        std::string removeBoundary(std::string &body, std::string &boundary);
-        std::string     _response_content;
+ private:
+  Server serv;
+  std::string targetFile;
+  std::vector<uint8_t> body;
+  size_t bodyLength;
+  std::string responseBody;
+  std::string location;
+  short code;
+  char *res;
+  int cgi;
+  int cgiFd[2];
+  size_t cgiResLength;
+  bool autoIndex;
+  std::map<std::string, std::string> mimeTypes;
 
-        Request     request;
-    private:
-        Server    _server;
-        std::string     _target_file;
-        std::vector<uint8_t> _body;
-        size_t          _body_length;
-        std::string     _response_body;
-        std::string     _location;
-        short           _code;
-        char            *_res;
-		int				_cgi;
-		int				_cgi_fd[2];
-		size_t			_cgi_response_length;
-        bool            _auto_index;
-
-        int     buildBody();
-        size_t  file_size();
-        void    setStatusLine();
-        void    setHeaders();
-        void    setServerDefaultErrorPages();
-        int     readFile();
-        void    contentType();
-        void    contentLength();
-        void    connection();
-        void    server();
-        void    location();
-        void    date();
-        int     handleTarget();
-        void    buildErrorBody();
-        bool    reqError();
-        int     handleCgi(std::string &);
-        int     handleCgiTemp(std::string &);
+  int buildBody();
+  size_t file_size();
+  void setStatusLine();
+  void setHeaders();
+  void setServerDefaultErrorPages();
+  int readFile();
+  void contentType();
+  void contentLength();
+  void connection();
+  void server();
+  void locations();
+  void date();
+  int handleTarget();
+  void buildErrorBody();
+  bool reqError();
+  int handleCgi(std::string &);
+  int controllerCgiTemp(std::string &);
 };
 
-#endif // RESPONSE_HPP
+#endif  // RESPONSE_HPP
