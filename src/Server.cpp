@@ -460,7 +460,7 @@ bool Server::checkLocaitons() const {
 /* socket setup and binding */
 void Server::setupServer(void) {
   if ((_listen_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-    LogService::printLog(RED, FAILURE, "webserv: socket error %s   Closing ....", strerror(errno));
+    LogService::printLog(RED, FAILURE, "Socket error %s   Closing ....", strerror(errno));
 
   int option_value = 1;
   setsockopt(_listen_fd, SOL_SOCKET, SO_REUSEADDR, &option_value, sizeof(int));
@@ -469,5 +469,5 @@ void Server::setupServer(void) {
   _server_address.sin_addr.s_addr = _host;
   _server_address.sin_port = htons(_port);
   if (bind(_listen_fd, (struct sockaddr *)&_server_address, sizeof(_server_address)) == -1)
-    LogService::printLog(RED, FAILURE, "webserv: bind error %s   Closing ....", strerror(errno));
+    LogService::printLog(RED, FAILURE, "Bind error %s   Closing ....", strerror(errno));
 }

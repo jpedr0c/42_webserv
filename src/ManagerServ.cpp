@@ -36,7 +36,7 @@ void ManagerServ::processServerRequests() {
     writeFdCopy = writeFdSet;
 
     if ((selectStatus = select(largestFd + 1, &receivedFdCopy, &writeFdCopy, NULL, &timer)) < 0)
-      LogService::printLog(RED, FAILURE, "webserv: Select error: %s. Closing the connection...", strerror(errno));
+      LogService::printLog(RED, FAILURE, "Select error: %s. Closing the connection...", strerror(errno));
     for (int i = 0; i <= largestFd; ++i) {
       if (FD_ISSET(i, &receivedFdCopy) && servsDict.count(i))
         acceptNewConnection(servsDict.find(i)->second);
@@ -59,7 +59,7 @@ void ManagerServ::processServerRequests() {
 void ManagerServ::handleClientTimeout() {
   for (std::map<int, Client>::iterator it = clientsDict.begin(); it != clientsDict.end(); ++it) {
     if (time(NULL) - it->second.getLastMessageTime() > 30) {
-      LogService::printLog(YELLOW, SUCCESS, "Client %d timed out. Closing connection...", it->first);
+      LogService::printLog(YELLOW, SUCCESS, "The connection with Client %d has been closed due to timeout.", it->first);
       closeConnection(it->first);
       return;
     }
@@ -72,9 +72,9 @@ void ManagerServ::initializeSets() {
 
   for (std::vector<Server>::iterator it = serv.begin(); it != serv.end(); ++it) {
     if (listen(it->getFd(), 512) == -1)
-      LogService::printLog(RED, FAILURE, "webserv: failed to listen: %s. Closing the connection...", strerror(errno));
+      LogService::printLog(RED, FAILURE, "Failed to listen: %s. Closing the connection...", strerror(errno));
     if (fcntl(it->getFd(), F_SETFL, O_NONBLOCK) < 0)
-      LogService::printLog(RED, FAILURE, "webserv: fcntl error: %s. Closing the connection...", strerror(errno));
+      LogService::printLog(RED, FAILURE, "Fcntl error: %s. Closing the connection...", strerror(errno));
     addToSet(it->getFd(), receiveFdSet);
     servsDict.insert(std::make_pair(it->getFd(), *it));
   }
@@ -86,19 +86,18 @@ void ManagerServ::acceptNewConnection(Server &serv) {
   long clientSocketAddrSize = sizeof(clientSocketAddr);
   int clientSocket;
   Client newClient(serv);
-  char buf[INET_ADDRSTRLEN];
 
   if ((clientSocket = accept(serv.getFd(), (struct sockaddr *)&clientSocketAddr,
                              (socklen_t *)&clientSocketAddrSize)) == -1) {
-    LogService::printLog(RED, SUCCESS, "webserv: Accept error encountered: %s", strerror(errno));
+    LogService::printLog(RED, SUCCESS, "Accept error encountered: %s", strerror(errno));
     return;
   }
-  LogService::printLog(YELLOW, SUCCESS, "New connection established from %s, assigned socket %d", inet_ntop(AF_INET, &clientSocketAddr, buf, INET_ADDRSTRLEN), clientSocket);
+  LogService::printLog(GREEN_BOLD, SUCCESS, "New connection established");
 
   addToSet(clientSocket, receiveFdSet);
 
   if (fcntl(clientSocket, F_SETFL, O_NONBLOCK) < 0) {
-    LogService::printLog(RED, FAILURE, "webserv: fcntl error: %s. Closing the connection...", strerror(errno));
+    LogService::printLog(RED, FAILURE, "Fcntl error: %s. Closing the connection...", strerror(errno));
     removeFromSet(clientSocket, receiveFdSet);
     close(clientSocket);
     return;
@@ -131,9 +130,9 @@ void ManagerServ::sendResponse(const int &i, Client &c) {
     LogService::printLog(RED, SUCCESS, "sendResponse(): error sending : %s", strerror(errno));
     closeConnection(i);
   } else if (bytesSent == 0 || (size_t)bytesSent == response.length()) {
-    LogService::printLog(CYAN, SUCCESS, "Response Sent To Socket %d, Stats=<%d>", i, c.response.getCode());
+    LogService::printLog(WHITE_BOLD, SUCCESS, "Status<%d>", c.response.getCode());
     if (c.request.keepAlive() == false || c.request.errorCode() || c.response.getCgiState()) {
-      LogService::printLog(YELLOW, SUCCESS, "Client %d: Connection Closed.", i);
+      LogService::printLog(YELLOW, SUCCESS, "Connection with Client %d has been terminated.", i);
       closeConnection(i);
     } else {
       removeFromSet(i, writeFdSet);
@@ -165,12 +164,12 @@ void ManagerServ::readAndProcessRequest(const int &i, Client &client) {
   char buffer[40000];
   int bytesRead = read(i, buffer, 40000);
   if (bytesRead == 0) {
-    LogService::printLog(YELLOW, SUCCESS, "webserv: Connection closed for client %d", i);
+    LogService::printLog(YELLOW, SUCCESS, "Connection with client %d has been successfully closed", i);
     closeConnection(i);
     return;
   }
   if (bytesRead < 0) {
-    LogService::printLog(RED, SUCCESS, "webserv: Error reading from file descriptor %d: %s", i, strerror(errno));
+    LogService::printLog(RED, SUCCESS, "Error reading from file descriptor %d: %s", i, strerror(errno));
     closeConnection(i);
     return;
   }
@@ -182,7 +181,7 @@ void ManagerServ::readAndProcessRequest(const int &i, Client &client) {
 
   if (client.request.parsingCompleted() || client.request.errorCode()) {
     assignServer(client);
-    LogService::printLog(CYAN, SUCCESS, "Request received from Socket %d, Method=<%s>, URI=<%s>", i, client.request.getMethodStr().c_str(), client.request.getPath().c_str());
+    LogService::printLog(BLUE_BOLD, SUCCESS, "<%s> \"%s\"", client.request.getMethodStr().c_str(), client.request.getPath().c_str());
     client.buildResponse();
     if (client.response.getCgiState()) {
       handleReqBody(client);
