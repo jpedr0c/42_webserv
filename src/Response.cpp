@@ -262,92 +262,133 @@ static void getLocationMatch(std::string &path, std::vector<Location> locations,
   }
 }
 
+bool Response::isMethodNotAllowed(Location &location) {
+  return isAllowedMethod(request.getMethod(), location, code);
+}
+
+bool Response::isRequestBodySizeExceeded(const std::string &body, const Location &location) {
+  return (body.length() > location.getMaxBodySize());
+}
+
+bool Response::checkLocationReturn(Location &location) {
+  return checkReturn(location, code, this->location);
+}
+
+bool Response::isCgiPath(const std::string &path) {
+  return (path.find("cgi") != std::string::npos);
+}
+
+bool Response::isCgiExtension(const std::string &targetFile, const Location &location) {
+  return (targetFile.rfind(location.getCgiExtension()[0]) != std::string::npos);
+}
+
+bool Response::handleIndexLocation(const std::string &indexLocation, bool autoindex) {
+  if (!indexLocation.empty())
+    targetFile += indexLocation;
+  else
+    targetFile += serv.getIndex();
+
+  if (!fileExists(targetFile)) {
+    if (autoindex) {
+      targetFile.erase(targetFile.find_last_of('/') + 1);
+      autoIndex = true;
+      return false;
+    } else {
+      code = 403;
+      return true;
+    }
+  }
+
+  if (isDirectory(targetFile)) {
+    code = 301;
+    if (!indexLocation.empty())
+      location = combinePaths(request.getPath(), indexLocation, "");
+    else
+      location = combinePaths(request.getPath(), serv.getIndex(), "");
+    if (location[location.length() - 1] != '/')
+      location.insert(location.end(), '/');
+
+    return true;
+  }
+
+  return false;
+}
+
+bool Response::handleNonLocation(const std::string &root, Request &request) {
+  targetFile = combinePaths(root, request.getPath(), "");
+  if (isDirectory(targetFile)) {
+    if (targetFile[targetFile.length() - 1] != '/') {
+      code = 301;
+      location = request.getPath() + "/";
+      return true;
+    }
+    targetFile += serv.getIndex();
+    if (!fileExists(targetFile)) {
+      code = 403;
+      return true;
+    }
+    if (isDirectory(targetFile)) {
+      code = 301;
+      location = combinePaths(request.getPath(), serv.getIndex(), "");
+      if (location[location.length() - 1] != '/')
+        location.insert(location.end(), '/');
+      return true;
+    }
+  }
+
+  return false;
+}
+
 int Response::handleTarget() {
   std::string locationKey;
   getLocationMatch(request.getPath(), serv.getLocations(), locationKey);
-  if (locationKey.length() > 0) {
-    Location targetlocation = *serv.getLocationKey(locationKey);
 
-    if (isAllowedMethod(request.getMethod(), targetlocation, code)) {
+  if (!locationKey.empty()) {
+    Location targetLocation = *serv.getLocationKey(locationKey);
+
+    if (isMethodNotAllowed(targetLocation)) {
       std::cout << "METHOD NOT ALLOWED \n";
-      return (1);
+      return 1;
     }
-    if (request.getBody().length() > targetlocation.getMaxBodySize()) {
+
+    if (isRequestBodySizeExceeded(request.getBody(), targetLocation)) {
       code = 413;
-      return (1);
-    }
-    if (checkReturn(targetlocation, code, location))
-      return (1);
-
-    if (targetlocation.getPath().find("cgi") != std::string::npos) {
-      return (handleCgi(locationKey));
+      return 1;
     }
 
-    if (!targetlocation.getAlias().empty()) {
-      replaceAlias(targetlocation, request, targetFile);
-    } else
-      appendRoot(targetlocation, request, targetFile);
+    if (checkLocationReturn(targetLocation))
+      return 1;
 
-    if (!targetlocation.getCgiExtension().empty()) {
-      if (targetFile.rfind(targetlocation.getCgiExtension()[0]) != std::string::npos) {
-        return (controllerCgiTemp(locationKey));
+    if (isCgiPath(targetLocation.getPath())) {
+      return handleCgi(locationKey);
+    }
+
+    if (!targetLocation.getAlias().empty()) {
+      replaceAlias(targetLocation, request, targetFile);
+    } else {
+      appendRoot(targetLocation, request, targetFile);
+    }
+
+    if (!targetLocation.getCgiExtension().empty()) {
+      if (isCgiExtension(targetFile, targetLocation)) {
+        return controllerCgiTemp(locationKey);
       }
     }
+
     if (isDirectory(targetFile)) {
       if (targetFile[targetFile.length() - 1] != '/') {
         code = 301;
         location = request.getPath() + "/";
-        return (1);
+        return 1;
       }
-      if (!targetlocation.getIndexLocation().empty())
-        targetFile += targetlocation.getIndexLocation();
-      else
-        targetFile += serv.getIndex();
-      if (!fileExists(targetFile)) {
-        if (targetlocation.getAutoindex()) {
-          targetFile.erase(targetFile.find_last_of('/') + 1);
-          autoIndex = true;
-          return (0);
-        } else {
-          code = 403;
-          return (1);
-        }
-      }
-      if (isDirectory(targetFile)) {
-        code = 301;
-        if (!targetlocation.getIndexLocation().empty())
-          location = combinePaths(request.getPath(), targetlocation.getIndexLocation(), "");
-        else
-          location = combinePaths(request.getPath(), serv.getIndex(), "");
-        if (location[location.length() - 1] != '/')
-          location.insert(location.end(), '/');
 
-        return (1);
-      }
+      return handleIndexLocation(targetLocation.getIndexLocation(), targetLocation.getAutoindex());
     }
   } else {
-    targetFile = combinePaths(serv.getRoot(), request.getPath(), "");
-    if (isDirectory(targetFile)) {
-      if (targetFile[targetFile.length() - 1] != '/') {
-        code = 301;
-        location = request.getPath() + "/";
-        return (1);
-      }
-      targetFile += serv.getIndex();
-      if (!fileExists(targetFile)) {
-        code = 403;
-        return (1);
-      }
-      if (isDirectory(targetFile)) {
-        code = 301;
-        location = combinePaths(request.getPath(), serv.getIndex(), "");
-        if (location[location.length() - 1] != '/')
-          location.insert(location.end(), '/');
-        return (1);
-      }
-    }
+    return handleNonLocation(serv.getRoot(), request);
   }
-  return (0);
+
+  return 0;
 }
 
 bool Response::reqError() {
@@ -382,6 +423,7 @@ void Response::buildErrorBody() {
     }
   }
 }
+
 void Response::buildResponse() {
   if (reqError() || buildBody())
     buildErrorBody();
@@ -398,7 +440,7 @@ void Response::buildResponse() {
   }
   setStatusLine();
   setHeaders();
-  if (request.getMethod() != HEAD && (request.getMethod() == GET || code != 200))
+  if (request.getMethod() == GET || code != 200)
     responseContent.append(responseBody);
 }
 
