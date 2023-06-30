@@ -388,7 +388,7 @@ void Response::buildResponse() {
   if (cgi)
     return;
   else if (autoIndex) {
-    std::cout << "AUTO index " << std::endl;
+    std::cout << "Auto index " << std::endl;
     if (buildHtmlIndex(targetFile, body, bodyLength)) {
       code = 500;
       buildErrorBody();
@@ -426,50 +426,88 @@ void Response::setStatusLine() {
   responseContent.append("\r\n");
 }
 
-int Response::buildBody() {
-  if (request.getBody().length() > serv.getClientMaxBodySize()) {
-    code = 413;
-    return (1);
-  }
-  if (handleTarget())
-    return (1);
-  if (cgi || autoIndex)
-    return (0);
-  if (code)
-    return (0);
-  if (request.getMethod() == GET || request.getMethod() == HEAD) {
-    if (readFile())
-      return (1);
-  } else if (request.getMethod() == POST || request.getMethod() == PUT) {
-    if (fileExists(targetFile) && request.getMethod() == POST) {
-      code = 204;
-      return (0);
-    }
-    std::ofstream file(targetFile.c_str(), std::ios::binary);
-    if (file.fail()) {
-      code = 404;
-      return (1);
-    }
+bool Response::isBodySizeExceeded() {
+  return (request.getBody().length() > serv.getClientMaxBodySize());
+}
 
-    if (request.getMultiformFlag()) {
-      std::string body = request.getBody();
-      body = removeBoundary(body, request.getBoundary());
-      file.write(body.c_str(), body.length());
-    } else {
-      file.write(request.getBody().c_str(), request.getBody().length());
+bool Response::handleTgt() {
+  if (cgi || autoIndex) {
+    return true;
+  }
+  return false;
+}
+
+bool Response::handleGetMethod() {
+  if (readFile()) {
+    return true;
+  }
+  return false;
+}
+
+bool Response::handlePostMethod() {
+  if (fileExists(targetFile) && request.getMethod() == POST) {
+    code = 204;
+    return false;
+  }
+
+  std::ofstream file(targetFile.c_str(), std::ios::binary);
+  if (file.fail()) {
+    code = 404;
+    return true;
+  }
+
+  if (request.getMultiformFlag()) {
+    std::string body = request.getBody();
+    body = removeBoundary(body, request.getBoundary());
+    file.write(body.c_str(), body.length());
+  } else {
+    file.write(request.getBody().c_str(), request.getBody().length());
+  }
+
+  return false;
+}
+
+bool Response::handleDeleteMethod() {
+  if (!fileExists(targetFile)) {
+    code = 404;
+    return true;
+  }
+  if (remove(targetFile.c_str()) != 0) {
+    code = 500;
+    return true;
+  }
+  return false;
+}
+
+int Response::buildBody() {
+  if (isBodySizeExceeded()) {
+    code = 413;
+    return 1;
+  }
+
+  if (handleTarget()) {
+    return 1;
+  }
+
+  if (code) {
+    return 0;
+  }
+
+  if (request.getMethod() == GET) {
+    if (handleGetMethod()) {
+      return 1;
+    }
+  } else if (request.getMethod() == POST) {
+    if (handlePostMethod()) {
+      return 1;
     }
   } else if (request.getMethod() == DELETE) {
-    if (!fileExists(targetFile)) {
-      code = 404;
-      return (1);
-    }
-    if (remove(targetFile.c_str()) != 0) {
-      code = 500;
-      return (1);
+    if (handleDeleteMethod()) {
+      return 1;
     }
   }
   code = 200;
-  return (0);
+  return 0;
 }
 
 int Response::readFile() {

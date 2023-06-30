@@ -36,7 +36,12 @@ class Response {
   bool isEndBoundaryLine(const std::string &line, const std::string &boundary);
   std::string removeBoundary(std::string &body, const std::string &boundary);
 
-  // std::string removeBoundary(std::string &body, std::string &boundary);
+  bool isBodySizeExceeded();
+  bool handleTgt();
+  bool handleGetMethod();
+  bool handlePostMethod();
+  bool handleDeleteMethod();
+
   std::string responseContent;
   bool hasMimeType(std::string &extension) const;
   std::string getMimeType(std::string extension) const;
@@ -77,4 +82,4 @@ class Response {
   int controllerCgiTemp(std::string &);
 };
 
-#endif  // RESPONSE_HPP
+#endif
