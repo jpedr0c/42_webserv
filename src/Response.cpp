@@ -262,92 +262,133 @@ static void getLocationMatch(std::string &path, std::vector<Location> locations,
   }
 }
 
+bool Response::isMethodNotAllowed(Location &location) {
+  return isAllowedMethod(request.getMethod(), location, code);
+}
+
+bool Response::isRequestBodySizeExceeded(const std::string &body, const Location &location) {
+  return (body.length() > location.getMaxBodySize());
+}
+
+bool Response::checkLocationReturn(Location &location) {
+  return checkReturn(location, code, this->location);
+}
+
+bool Response::isCgiPath(const std::string &path) {
+  return (path.find("cgi") != std::string::npos);
+}
+
+bool Response::isCgiExtension(const std::string &targetFile, const Location &location) {
+  return (targetFile.rfind(location.getCgiExtension()[0]) != std::string::npos);
+}
+
+bool Response::handleIndexLocation(const std::string &indexLocation, bool autoindex) {
+  if (!indexLocation.empty())
+    targetFile += indexLocation;
+  else
+    targetFile += serv.getIndex();
+
+  if (!fileExists(targetFile)) {
+    if (autoindex) {
+      targetFile.erase(targetFile.find_last_of('/') + 1);
+      autoIndex = true;
+      return false;
+    } else {
+      code = 403;
+      return true;
+    }
+  }
+
+  if (isDirectory(targetFile)) {
+    code = 301;
+    if (!indexLocation.empty())
+      location = combinePaths(request.getPath(), indexLocation, "");
+    else
+      location = combinePaths(request.getPath(), serv.getIndex(), "");
+    if (location[location.length() - 1] != '/')
+      location.insert(location.end(), '/');
+
+    return true;
+  }
+
+  return false;
+}
+
+bool Response::handleNonLocation(const std::string &root, Request &request) {
+  targetFile = combinePaths(root, request.getPath(), "");
+  if (isDirectory(targetFile)) {
+    if (targetFile[targetFile.length() - 1] != '/') {
+      code = 301;
+      location = request.getPath() + "/";
+      return true;
+    }
+    targetFile += serv.getIndex();
+    if (!fileExists(targetFile)) {
+      code = 403;
+      return true;
+    }
+    if (isDirectory(targetFile)) {
+      code = 301;
+      location = combinePaths(request.getPath(), serv.getIndex(), "");
+      if (location[location.length() - 1] != '/')
+        location.insert(location.end(), '/');
+      return true;
+    }
+  }
+
+  return false;
+}
+
 int Response::handleTarget() {
   std::string locationKey;
   getLocationMatch(request.getPath(), serv.getLocations(), locationKey);
-  if (locationKey.length() > 0) {
-    Location targetlocation = *serv.getLocationKey(locationKey);
 
-    if (isAllowedMethod(request.getMethod(), targetlocation, code)) {
+  if (!locationKey.empty()) {
+    Location targetLocation = *serv.getLocationKey(locationKey);
+
+    if (isMethodNotAllowed(targetLocation)) {
       std::cout << "METHOD NOT ALLOWED \n";
-      return (1);
+      return 1;
     }
-    if (request.getBody().length() > targetlocation.getMaxBodySize()) {
+
+    if (isRequestBodySizeExceeded(request.getBody(), targetLocation)) {
       code = 413;
-      return (1);
-    }
-    if (checkReturn(targetlocation, code, location))
-      return (1);
-
-    if (targetlocation.getPath().find("cgi") != std::string::npos) {
-      return (handleCgi(locationKey));
+      return 1;
     }
 
-    if (!targetlocation.getAlias().empty()) {
-      replaceAlias(targetlocation, request, targetFile);
-    } else
-      appendRoot(targetlocation, request, targetFile);
+    if (checkLocationReturn(targetLocation))
+      return 1;
 
-    if (!targetlocation.getCgiExtension().empty()) {
-      if (targetFile.rfind(targetlocation.getCgiExtension()[0]) != std::string::npos) {
-        return (controllerCgiTemp(locationKey));
+    if (isCgiPath(targetLocation.getPath())) {
+      return handleCgi(locationKey);
+    }
+
+    if (!targetLocation.getAlias().empty()) {
+      replaceAlias(targetLocation, request, targetFile);
+    } else {
+      appendRoot(targetLocation, request, targetFile);
+    }
+
+    if (!targetLocation.getCgiExtension().empty()) {
+      if (isCgiExtension(targetFile, targetLocation)) {
+        return controllerCgiTemp(locationKey);
       }
     }
+
     if (isDirectory(targetFile)) {
       if (targetFile[targetFile.length() - 1] != '/') {
         code = 301;
         location = request.getPath() + "/";
-        return (1);
+        return 1;
       }
-      if (!targetlocation.getIndexLocation().empty())
-        targetFile += targetlocation.getIndexLocation();
-      else
-        targetFile += serv.getIndex();
-      if (!fileExists(targetFile)) {
-        if (targetlocation.getAutoindex()) {
-          targetFile.erase(targetFile.find_last_of('/') + 1);
-          autoIndex = true;
-          return (0);
-        } else {
-          code = 403;
-          return (1);
-        }
-      }
-      if (isDirectory(targetFile)) {
-        code = 301;
-        if (!targetlocation.getIndexLocation().empty())
-          location = combinePaths(request.getPath(), targetlocation.getIndexLocation(), "");
-        else
-          location = combinePaths(request.getPath(), serv.getIndex(), "");
-        if (location[location.length() - 1] != '/')
-          location.insert(location.end(), '/');
 
-        return (1);
-      }
+      return handleIndexLocation(targetLocation.getIndexLocation(), targetLocation.getAutoindex());
     }
   } else {
-    targetFile = combinePaths(serv.getRoot(), request.getPath(), "");
-    if (isDirectory(targetFile)) {
-      if (targetFile[targetFile.length() - 1] != '/') {
-        code = 301;
-        location = request.getPath() + "/";
-        return (1);
-      }
-      targetFile += serv.getIndex();
-      if (!fileExists(targetFile)) {
-        code = 403;
-        return (1);
-      }
-      if (isDirectory(targetFile)) {
-        code = 301;
-        location = combinePaths(request.getPath(), serv.getIndex(), "");
-        if (location[location.length() - 1] != '/')
-          location.insert(location.end(), '/');
-        return (1);
-      }
-    }
+    return handleNonLocation(serv.getRoot(), request);
   }
-  return (0);
+
+  return 0;
 }
 
 bool Response::reqError() {
@@ -382,13 +423,14 @@ void Response::buildErrorBody() {
     }
   }
 }
+
 void Response::buildResponse() {
   if (reqError() || buildBody())
     buildErrorBody();
   if (cgi)
     return;
   else if (autoIndex) {
-    std::cout << "AUTO index " << std::endl;
+    std::cout << "Auto index " << std::endl;
     if (buildHtmlIndex(targetFile, body, bodyLength)) {
       code = 500;
       buildErrorBody();
@@ -398,7 +440,7 @@ void Response::buildResponse() {
   }
   setStatusLine();
   setHeaders();
-  if (request.getMethod() != HEAD && (request.getMethod() == GET || code != 200))
+  if (request.getMethod() == GET || code != 200)
     responseContent.append(responseBody);
 }
 
@@ -426,50 +468,88 @@ void Response::setStatusLine() {
   responseContent.append("\r\n");
 }
 
-int Response::buildBody() {
-  if (request.getBody().length() > serv.getClientMaxBodySize()) {
-    code = 413;
-    return (1);
-  }
-  if (handleTarget())
-    return (1);
-  if (cgi || autoIndex)
-    return (0);
-  if (code)
-    return (0);
-  if (request.getMethod() == GET || request.getMethod() == HEAD) {
-    if (readFile())
-      return (1);
-  } else if (request.getMethod() == POST || request.getMethod() == PUT) {
-    if (fileExists(targetFile) && request.getMethod() == POST) {
-      code = 204;
-      return (0);
-    }
-    std::ofstream file(targetFile.c_str(), std::ios::binary);
-    if (file.fail()) {
-      code = 404;
-      return (1);
-    }
+bool Response::isBodySizeExceeded() {
+  return (request.getBody().length() > serv.getClientMaxBodySize());
+}
 
-    if (request.getMultiformFlag()) {
-      std::string body = request.getBody();
-      body = removeBoundary(body, request.getBoundary());
-      file.write(body.c_str(), body.length());
-    } else {
-      file.write(request.getBody().c_str(), request.getBody().length());
+bool Response::handleTgt() {
+  if (cgi || autoIndex) {
+    return true;
+  }
+  return false;
+}
+
+bool Response::handleGetMethod() {
+  if (readFile()) {
+    return true;
+  }
+  return false;
+}
+
+bool Response::handlePostMethod() {
+  if (fileExists(targetFile) && request.getMethod() == POST) {
+    code = 204;
+    return false;
+  }
+
+  std::ofstream file(targetFile.c_str(), std::ios::binary);
+  if (file.fail()) {
+    code = 404;
+    return true;
+  }
+
+  if (request.getMultiformFlag()) {
+    std::string body = request.getBody();
+    body = removeBoundary(body, request.getBoundary());
+    file.write(body.c_str(), body.length());
+  } else {
+    file.write(request.getBody().c_str(), request.getBody().length());
+  }
+
+  return false;
+}
+
+bool Response::handleDeleteMethod() {
+  if (!fileExists(targetFile)) {
+    code = 404;
+    return true;
+  }
+  if (remove(targetFile.c_str()) != 0) {
+    code = 500;
+    return true;
+  }
+  return false;
+}
+
+int Response::buildBody() {
+  if (isBodySizeExceeded()) {
+    code = 413;
+    return 1;
+  }
+
+  if (handleTarget()) {
+    return 1;
+  }
+
+  if (code) {
+    return 0;
+  }
+
+  if (request.getMethod() == GET) {
+    if (handleGetMethod()) {
+      return 1;
+    }
+  } else if (request.getMethod() == POST) {
+    if (handlePostMethod()) {
+      return 1;
     }
   } else if (request.getMethod() == DELETE) {
-    if (!fileExists(targetFile)) {
-      code = 404;
-      return (1);
-    }
-    if (remove(targetFile.c_str()) != 0) {
-      code = 500;
-      return (1);
+    if (handleDeleteMethod()) {
+      return 1;
     }
   }
   code = 200;
-  return (0);
+  return 0;
 }
 
 int Response::readFile() {
@@ -518,54 +598,70 @@ int Response::getCgiState() {
   return (cgi);
 }
 
-std::string Response::removeBoundary(std::string &body, std::string &boundary) {
-  std::string buffer;
-  std::string new_body;
+std::string Response::extractFilename(const std::string &line) {
   std::string filename;
-  bool is_boundary = false;
-  bool is_content = false;
+  size_t start = line.find("filename=\"");
+  if (start != std::string::npos) {
+    size_t end = line.find("\"", start + 10);
+    if (end != std::string::npos) {
+      filename = line.substr(start + 10, end - (start + 10));
+    }
+  }
+  return filename;
+}
+
+bool Response::isBoundaryLine(const std::string &line, const std::string &boundary) {
+  return (line.compare("--" + boundary + "\r") == 0);
+}
+
+bool Response::isEndBoundaryLine(const std::string &line, const std::string &boundary) {
+  return (line.compare("--" + boundary + "--\r") == 0);
+}
+
+std::string Response::removeBoundary(std::string &body, const std::string &boundary) {
+  std::string newBody;
+  std::string buffer;
+  std::string filename;
+  bool isBoundary = false;
+  bool isContent = false;
 
   if (body.find("--" + boundary) != std::string::npos && body.find("--" + boundary + "--") != std::string::npos) {
-    for (size_t i = 0; i < body.size(); i++) {
-      buffer.clear();
-      while (body[i] != '\n') {
-        buffer += body[i];
-        i++;
-      }
-      if (!buffer.compare(("--" + boundary + "--\r"))) {
-        is_content = true;
-        is_boundary = false;
-      }
-      if (!buffer.compare(("--" + boundary + "\r"))) {
-        is_boundary = true;
-      }
-      if (is_boundary) {
-        if (!buffer.compare(0, 31, "Content-Disposition: form-data;")) {
-          size_t start = buffer.find("filename=\"");
-          if (start != std::string::npos) {
-            size_t end = buffer.find("\"", start + 10);
-            if (end != std::string::npos)
-              filename = buffer.substr(start + 10, end);
-          }
-        } else if (!buffer.compare(0, 1, "\r") && !filename.empty()) {
-          is_boundary = false;
-          is_content = true;
-        }
+    std::string::size_type pos = 0;
+    std::string::size_type prevPos = 0;
+    while ((pos = body.find("\n", pos)) != std::string::npos) {
+      buffer = body.substr(prevPos, pos - prevPos);
 
-      } else if (is_content) {
-        if (!buffer.compare(("--" + boundary + "\r"))) {
-          is_boundary = true;
-        } else if (!buffer.compare(("--" + boundary + "--\r"))) {
-          new_body.erase(new_body.end() - 1);
-          break;
-        } else
-          new_body += (buffer + "\n");
+      if (isEndBoundaryLine(buffer, boundary)) {
+        isContent = true;
+        isBoundary = false;
       }
+
+      if (isBoundaryLine(buffer, boundary)) {
+        isBoundary = true;
+        filename = extractFilename(buffer);
+      }
+
+      if (isBoundary) {
+        if (!filename.empty() && buffer.compare("\r") == 0) {
+          isBoundary = false;
+          isContent = true;
+        }
+      } else if (isContent) {
+        if (isBoundaryLine(buffer, boundary)) {
+          isBoundary = true;
+        } else if (isEndBoundaryLine(buffer, boundary)) {
+          break;
+        } else {
+          newBody += (buffer + "\n");
+        }
+      }
+
+      prevPos = ++pos;
     }
   }
 
-  body.clear();
-  return (new_body);
+  body = newBody;
+  return body;
 }
 
 void Response::setCgiState(int state) {
