@@ -7,6 +7,7 @@
 *.lo
 *.o
 *.obj
+.cache_exists
 
 # Precompiled Headers
 *.gch
@@ -34,3 +35,4 @@
 
 webserv
 cgi/tmp/*
+webserv.dSYM/
