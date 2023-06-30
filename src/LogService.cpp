@@ -4,7 +4,7 @@ std::string LogService::getCurrentDateTime() {
   std::time_t now = std::time(NULL);
   std::tm* time_info = std::localtime(&now);
   char date[100];
-  std::strftime(date, sizeof(date), "[%Y-%d-%m %H:%M:%S] ", time_info);
+  std::strftime(date, sizeof(date), "[%d-%m-%Y %H:%M:%S] ", time_info);
   return std::string(date, date + std::strlen(date));
 }
 
