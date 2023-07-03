@@ -45,18 +45,18 @@ size_t Parser::findStartServer(size_t start, std::string &content) {
     if (content[i] == 's')
       break;
     if (!isspace(content[i]))
-      throw Error("Wrong character out of server scope{}");
+      throw Error("Encountered an unexpected character outside of server scope '{}'");
   }
   if (!content[i])
     return (start);
   if (content.compare(i, 6, "server") != 0)
-    throw Error("Wrong character out of server scope{}");
+    throw Error("Unexpected character found outside of server scope '{}'");
   i += 6;
   while (content[i] && isspace(content[i]))
     i++;
   if (content[i] == '{')
     return (i);
-  throw Error("Wrong character out of server scope{}");
+  throw Error("Unexpected character found outside of server scope '{}'");
 }
 
 size_t Parser::findEndServer(size_t start, std::string &content) {
@@ -81,12 +81,12 @@ void Parser::splitServers(std::string &content) {
   size_t end = 1;
 
   if (content.find("server", 0) == std::string::npos)
-    throw Error("Server did not find");
+    throw Error("Server not found");
   while (start != end && start < content.length()) {
     start = findStartServer(start, content);
     end = findEndServer(start, content);
     if (start == end)
-      throw Error("problem with scope");
+      throw Error("Scope problem encountered. Start and end positions are the same");
     this->serverConfig.push_back(content.substr(start, end - start + 1));
     this->numberOfServers++;
     start = end + 1;
@@ -145,23 +145,23 @@ std::vector<std::string> Parser::splitParametrs(std::string inputStr, std::strin
 
 void Parser::validateServerParametersSize(const std::vector<std::string> &parameters) {
   if (parameters.size() < 3)
-    throw Error("Failed server validation");
+    throw Error("Server validation failed. Insufficient number of parameters");
 }
 
 void Parser::validateDuplicatePort(Server &server) {
   if (server.getPort())
-    throw Error("Port is duplicated");
+    throw Error("Duplicate port detected. Port is already assigned");
 }
 
 void Parser::validateServerScopeCharacter(const std::string &parameter) {
   if (parameter == "{" || parameter == "}")
-    throw Error("Wrong character in server scope{}");
+    throw Error("Invalid character found in server scope '{}'");
 }
 
 std::vector<std::string> Parser::parseLocationCodes(const std::vector<std::string> &parameters, size_t &i) {
   std::vector<std::string> codes;
   if (parameters[++i] != "{")
-    throw Error("Wrong character in server scope{}");
+    throw Error("Unexpected character encountered in server scope '{}'");
   i++;
   while (i < parameters.size() && parameters[i] != "}")
     codes.push_back(parameters[i++]);
@@ -175,12 +175,12 @@ void Parser::validateClosingBracket(const std::vector<std::string> &parameter, s
 
 void Parser::validateDuplicateHost(Server &server) {
   if (server.getHost())
-    throw Error("Host is duplicated");
+    throw Error("Duplicate host detected. Host is already assigned");
 }
 
 void Parser::validateDuplicateRoot(Server &server) {
   if (!server.getRoot().empty())
-    throw Error("Root is duplicated");
+    throw Error("Duplicate root directory detected. Root directory is already assigned");
 }
 
 void Parser::processErrorCodes(const std::vector<std::string> &parameters, size_t &i, std::vector<std::string> &errorCodes) {
@@ -224,16 +224,14 @@ void Parser::setDefaultServerValues(Server &server) {
 
 void Parser::performServerValidations(Server &server) {
   if (ConfigFile::isFileExistAndReadable(server.getRoot(), server.getIndex()))
-    throw Error("Index from config file not found or unreadable");
+    throw Error("The index file specified in the config file was not found or is unreadable");
   if (server.checkLocaitons())
-    throw Error("Location is duplicated");
+    throw Error("Duplicate location found in the server configuration");
   if (!server.getPort())
-    throw Error("Port not found");
+    throw Error("Port number is missing in the server configuration");
   if (!server.isValidErrorPages())
-    throw Error("Incorrect path for error page or number of errors");
+    throw Error("Incorrect error page path or invalid number of error pages specified");
 }
-
-// DAQUI PARA CIMA JÁ FOI TUDO
 
 void Parser::createServer(std::string &configString, Server &server) {
   std::vector<std::string> parameterList;
@@ -280,8 +278,8 @@ void Parser::createServer(std::string &configString, Server &server) {
       isAutoindexEnable = true;
     } else if (parameterList[i] != "}" && parameterList[i] != "{") {
       if (!locationFlag)
-        throw Error("Parametrs after location");
-      throw Error("Unsupported directive");
+        throw Error("Unexpected parameters found after the 'location' directive");
+      throw Error("Unsupported directive encountered");
     }
   }
   setDefaultServerValues(server);
@@ -294,22 +292,22 @@ int Parser::createCluster(const std::string &filePath) {
   int fileType = configFile.getTypePath(filePath);
 
   if (fileType == INVALID_TYPE)
-    throw Error("File is invalid");
+    throw Error("Invalid file type detected");
 
   int isFileReadable = configFile.checkAccessFile(filePath, R_OK);
 
   if (isFileReadable == -1)
-    throw Error("File is not accessible");
+    throw Error("File is not accessible or cannot be read");
 
   std::string fileContent = configFile.readFile(filePath);
 
   if (fileContent.empty())
-    throw Error("File is empty");
+    throw Error("Empty file encountered");
 
   extractServersConfig(fileContent);
 
   if (this->serverConfig.size() != this->numberOfServers)
-    throw Error("Something with size");
+    throw Error("Inconsistent size detected");
 
   for (size_t i = 0; i < this->numberOfServers; i++) {
     Server server;
