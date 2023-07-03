@@ -54,7 +54,7 @@ void Location::setRootLocation(std::string param) {
   if (ConfigFile::getTypePath(param) == 2)
     this->root = param;
   else
-    throw Error("Error: Invalid root location");
+    throw Error("Invalid root location. Please provide a valid path for the root location.");
 }
 
 void Location::setMethods(std::vector<std::string> methods) {
@@ -70,7 +70,7 @@ void Location::setMethods(std::vector<std::string> methods) {
     else if (methods[i] == "DELETE")
       this->methods[2] = 1;
     else
-      throw Error("Error: Unsupported HTTP method: " + methods[i]);
+      throw Error("Unsupported HTTP method: " + methods[i] + ". Only GET, POST, and DELETE methods are supported.");
   }
 }
 
@@ -78,7 +78,7 @@ void Location::setAutoindex(std::string param) {
   if (param == "on" || param == "off")
     this->autoIndex = (param == "on");
   else
-    throw Error("Error: Incorrect autoindex value");
+    throw Error("Incorrect autoindex value. Please specify 'on' or 'off' for the autoindex parameter.");
 }
 
 void Location::setIndexLocation(std::string param) {
@@ -106,10 +106,10 @@ void Location::setMaxBodySize(std::string param) {
 
   for (size_t i = 0; i < param.length(); i++) {
     if (param[i] < '0' || param[i] > '9')
-      throw Error("Error: Incorrect syntax: client_max_body_size");
+      throw Error("Incorrect syntax: client_max_body_size. Only numerical digits are allowed.");
   }
   if (!atoi(param.c_str()))
-    throw Error("Error: Incorrect syntax: client_max_body_size");
+    throw Error("Incorrect syntax: client_max_body_size. The parameter should be a positive integer.");
   bodySize = atoi(param.c_str());
   this->maxBodySize = bodySize;
 }
