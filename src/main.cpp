@@ -11,7 +11,7 @@ int error(std::string errorMessage) {
 int main(int argc, char **argv) {
   try {
     if (argc != 2)
-      throw std::invalid_argument("Usage: ./webserv <config_file>.conf");
+      throw std::invalid_argument("Invalid number of arguments. Usage: ./webserv <config_file>.conf.");
     signal(SIGPIPE, SIG_IGN);
     std::string configFile = (argv[1]);
     Parser serverParser;
