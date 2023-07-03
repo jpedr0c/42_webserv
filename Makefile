@@ -4,7 +4,7 @@ NAME = webserv
 INCS = inc/
 SRC_DIR = src/
 OBJ_DIR = obj/
-RM = rm -f
+RM = rm -rf
 CPP = c++
 CPPFLAGS = -Wall -Wextra -Werror -std=c++98 -g3
 
@@ -60,6 +60,7 @@ clean:
 
 fclean: clean
 	@$(RM) $(NAME)
+	@$(RM) ./cgi/tmp/
 	@echo -e -n "$(CYAN)[🖥️  WEBSERV]$(SET_COLOR)$(BLUE)Executable file$(SET_COLOR)$(GREEN) => Cleaned$(SET_COLOR)"
 	@echo -e "$(GREEN)🗑️$(SET_COLOR)"
 
