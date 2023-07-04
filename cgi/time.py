@@ -14,6 +14,6 @@ response_body = [
     "<body>",
     f"<h1>{time}</h1>",
     "</body>",
-    "</html>"
+    "</html>",
 ]
 [print(i) for i in response_body]

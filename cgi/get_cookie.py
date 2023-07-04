@@ -3,8 +3,7 @@
 import os
 from http import cookies
 
-# Import modules for CGI handling
-import cgi, cgitb
+import cgi
 
 uploaded_cookies = cgi.FieldStorage()
 key = uploaded_cookies.getvalue("key")
