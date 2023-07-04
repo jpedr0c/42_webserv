@@ -3,30 +3,30 @@
 
 #include "Webserv.hpp"
 
-static std::string serverParametrs[] = {"server_name", "listen", "root", "index", "allow_methods", "client_body_buffer_size"};
-
 class Location;
 
 class Server {
  private:
-  uint16_t _port;
-  in_addr_t _host;
-  std::string _server_name;
+  uint16_t port;
+  in_addr_t host;
+  std::string serverName;
   std::string root;
   unsigned long maxBodySize;
   std::string index;
   bool autoIndex;
-  std::map<short, std::string> _error_pages;
-  std::vector<Location> _locations;
-  struct sockaddr_in _server_address;
-  int _listen_fd;
+  std::map<short, std::string> errorPages;
+  std::vector<Location> locations;
+  struct sockaddr_in serverAddress;
+  int listenFd;
 
  public:
   Server();
   ~Server();
   Server(const Server &other);
   Server &operator=(const Server &rhs);
+
   void initErrorPages(void);
+
   void setServerName(std::string server_name);
   void setHost(std::string parametr);
   void setRoot(std::string root);
@@ -54,8 +54,22 @@ class Server {
   const std::string &getPathErrorPage(short key);
   const std::vector<Location>::iterator getLocationKey(std::string key);
 
+  void handleRootLocation(std::vector<std::string> &param, size_t &i, Location &newLocation);
+  void handleAllowMethods(std::vector<std::string> &param, size_t &i, Location &newLocation, bool &flagMethods);
+  void handleIndexLocation(std::vector<std::string> &param, size_t &i, Location &newLocation);
+  void handleAutoindex(std::vector<std::string> &param, size_t &i, const std::string &path, Location &newLocation, bool &flagAutoIndex);
+  void handleReturn(std::vector<std::string> &param, size_t &i, const std::string &path, Location &newLocation);
+  void handleAlias(std::vector<std::string> &param, size_t &i, const std::string &path, Location &newLocation);
+  void handleCgiExtension(std::vector<std::string> &param, size_t &i, Location &newLocation);
+  void handleCgiPath(std::vector<std::string> &param, size_t &i, Location &newLocation);
+  void handleMaxBodySize(std::vector<std::string> &param, size_t &i, Location &newLocation, bool &flagMaxSize);
+  void handleLocationDefaults(Location &newLocation, bool flagMaxSize);
+  void handleLocationValidation(int valid);
+
+  int isValidRegularLocation(Location &location) const;
+  int isValidCgiLocation(Location &location) const;
   static void checkToken(std::string &parametr);
-  bool checkLocaitons() const;
+  bool checkLocation() const;
 
  public:
   class ErrorException : public std::exception {

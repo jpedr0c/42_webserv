@@ -225,7 +225,7 @@ void Parser::setDefaultServerValues(Server &server) {
 void Parser::performServerValidations(Server &server) {
   if (ConfigFile::isFileExistAndReadable(server.getRoot(), server.getIndex()))
     throw Error("The index file specified in the config file was not found or is unreadable");
-  if (server.checkLocaitons())
+  if (server.checkLocation())
     throw Error("Duplicate location found in the server configuration");
   if (!server.getPort())
     throw Error("Port number is missing in the server configuration");
