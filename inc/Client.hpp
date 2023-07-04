@@ -13,13 +13,9 @@ class Client {
   Client &operator=(const Client &rhs);
   ~Client();
 
-  const int &getSocket() const;
-  const struct sockaddr_in &getAddress() const;
-  const Request &getRequest() const;
   const time_t &getLastMessageTime() const;
 
   void setSocket(int &);
-  void setAddress(sockaddr_in &);
   void setServer(Server &);
   void buildResponse();
   void updateLastMessageTime();

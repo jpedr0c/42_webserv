@@ -35,24 +35,8 @@ void Client::setSocket(int &socket) {
   clientSocket = socket;
 }
 
-void Client::setAddress(sockaddr_in &address) {
-  clientSocketAddr = address;
-}
-
 void Client::setServer(Server &server) {
   response.setServer(server);
-}
-
-const int &Client::getSocket() const {
-  return (clientSocket);
-}
-
-const Request &Client::getRequest() const {
-  return (request);
-}
-
-const struct sockaddr_in &Client::getAddress() const {
-  return (clientSocketAddr);
 }
 
 const time_t &Client::getLastMessageTime() const {
