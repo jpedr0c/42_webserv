@@ -153,7 +153,7 @@ void CgiController::initEnv(Request &req, const std::vector<Location>::iterator 
   this->env["GATEWAY_INTERFACE"] = "CGI/1.1";
   poz = findStart(this->cgiPath, "cgi/");
   this->env["SCRIPT_NAME"] = this->cgiPath;
-  this->env["SCRIPT_FILENAME"] = ((poz < 0 || (size_t)(poz + 8) > this->cgiPath.size()) ? "" : this->cgiPath.substr(poz + 8, this->cgiPath.size()));  // check dif cases after put right parametr from the response
+  this->env["SCRIPT_FILENAME"] = ((poz < 0 || (size_t)(poz + 8) > this->cgiPath.size()) ? "" : this->cgiPath.substr(poz + 8, this->cgiPath.size()));
   this->env["PATH_INFO"] = getPathInfo(req.getPath(), itLocation->getCgiExtension());
   this->env["PATH_TRANSLATED"] = itLocation->getRootLocation() + (this->env["PATH_INFO"] == "" ? "/" : this->env["PATH_INFO"]);
   this->env["QUERY_STRING"] = decode(req.getQuery());
