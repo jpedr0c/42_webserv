@@ -44,15 +44,6 @@ bool checkUriPos(std::string path) {
   return (0);
 }
 
-/**
-
- * Checks if character is allowed to be in a URI
- * Characters allowed as specifed in RFC:
-   Alphanumeric: A-Z a-z 0-9
-   Unreserved: - _ . ~
-   Reserved:  * ' ( ) ; : @ & = + $ , / ? % # [ ]
-
- **/
 bool allowedCharURI(uint8_t ch) {
   if ((ch >= '#' && ch <= ';') || (ch >= '?' && ch <= '[') || (ch >= 'a' && ch <= 'z') ||
       ch == '!' || ch == '=' || ch == ']' || ch == '_' || ch == '~')
@@ -60,16 +51,6 @@ bool allowedCharURI(uint8_t ch) {
   return (false);
 }
 
-/**
-
-* Checks whether the character passed is allowed in a field name
-* Characters allowed as specifed in RFC:
-
-"!" / "#" / "$" / "%" / "&" / "'"
-/ "*" / "+" / "-" / "." / "^" / "_"
-/ "`" / "|" / "~" / 0-9 / A-Z / a-z
-
-**/
 bool isToken(uint8_t ch) {
   if (ch == '!' || (ch >= '#' && ch <= '\'') || ch == '*' || ch == '+' || ch == '-' || ch == '.' ||
       (ch >= '0' && ch <= '9') || (ch >= 'A' && ch <= 'Z') || (ch >= '^' && ch <= '`') ||
@@ -78,7 +59,6 @@ bool isToken(uint8_t ch) {
   return (false);
 }
 
-/* Trim leading and trailing  spaces */
 void trimStr(std::string &str) {
   static const char *spaces = " \t";
   str.erase(0, str.find_first_not_of(spaces));
@@ -89,6 +69,7 @@ void toLower(std::string &str) {
   for (size_t i = 0; i < str.length(); ++i)
     str[i] = std::tolower(str[i]);
 }
+
 void Request::feed(char *data, size_t size) {
   u_int8_t character;
   static std::stringstream s;
@@ -343,7 +324,6 @@ void Request::feed(char *data, size_t size) {
           _storage.clear();
           _fields_done_flag = true;
           _handle_headers();
-          // if no body then parsing is completed.
           if (_body_flag == 1) {
             if (_chunked_flag == true)
               _state = Chunked_Length_Begin;
@@ -373,8 +353,6 @@ void Request::feed(char *data, size_t size) {
           return;
         }
         break;
-        // if (!character allowed)
-        //  error;
       }
       case Field_Value: {
         if (character == '\r') {
@@ -514,7 +492,7 @@ void Request::feed(char *data, size_t size) {
       case Parsing_Done: {
         return;
       }
-    }  // end of swtich
+    }
     _storage += character;
   }
   if (_state == Parsing_Done) {
@@ -636,8 +614,6 @@ short Request::errorCode() {
   return (this->_error_code);
 }
 
-/* Reset object variables to recive new request */
-
 void Request::clear() {
   path.clear();
   _error_code = 0;
@@ -662,8 +638,6 @@ void Request::clear() {
   _chunked_flag = false;
   _multiform_flag = false;
 }
-
-/* Checks the value of header "Connection". If keep-alive, don't close the connection. */
 
 bool Request::keepAlive() {
   if (_request_headers.count("connection")) {
