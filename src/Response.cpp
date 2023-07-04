@@ -428,12 +428,12 @@ void Response::buildErrorBody() {
   }
 }
 
-int Response::buildHtmlIndex(std::string &dir_name, std::vector<uint8_t> &body, size_t &body_len) {
+int Response::buildHtmlIndex(std::string &dirName, std::vector<uint8_t> &body, size_t &bodyLen) {
   struct dirent *entityStruct;
   DIR *directory;
   std::string dirListPage;
 
-  directory = opendir(dir_name.c_str());
+  directory = opendir(dirName.c_str());
   if (directory == NULL) {
     std::cerr << "opendir failed" << std::endl;
     return (1);
@@ -441,43 +441,43 @@ int Response::buildHtmlIndex(std::string &dir_name, std::vector<uint8_t> &body, 
   dirListPage.append("<html>\n");
   dirListPage.append("<head>\n");
   dirListPage.append("<title> Index of");
-  dirListPage.append(dir_name);
+  dirListPage.append(dirName);
   dirListPage.append("</title>\n");
   dirListPage.append("</head>\n");
   dirListPage.append("<body >\n");
-  dirListPage.append("<h1> Index of " + dir_name + "</h1>\n");
+  dirListPage.append("<h1> Index of " + dirName + "</h1>\n");
   dirListPage.append("<table style=\"width:80%; font-size: 15px\">\n");
   dirListPage.append("<hr>\n");
   dirListPage.append("<th style=\"text-align:left\"> File Name </th>\n");
   dirListPage.append("<th style=\"text-align:left\"> Last Modification  </th>\n");
   dirListPage.append("<th style=\"text-align:left\"> File Size </th>\n");
 
-  struct stat file_stat;
-  std::string file_path;
+  struct stat fileStat;
+  std::string filePath;
 
   while ((entityStruct = readdir(directory)) != NULL) {
     if (strcmp(entityStruct->d_name, ".") == 0)
       continue;
-    file_path = dir_name + entityStruct->d_name;
-    stat(file_path.c_str(), &file_stat);
+    filePath = dirName + entityStruct->d_name;
+    stat(filePath.c_str(), &fileStat);
     dirListPage.append("<tr>\n");
     dirListPage.append("<td>\n");
     dirListPage.append("<a href=\"");
     dirListPage.append(entityStruct->d_name);
-    if (S_ISDIR(file_stat.st_mode))
+    if (S_ISDIR(fileStat.st_mode))
       dirListPage.append("/");
     dirListPage.append("\">");
     dirListPage.append(entityStruct->d_name);
-    if (S_ISDIR(file_stat.st_mode))
+    if (S_ISDIR(fileStat.st_mode))
       dirListPage.append("/");
     dirListPage.append("</a>\n");
     dirListPage.append("</td>\n");
     dirListPage.append("<td>\n");
-    dirListPage.append(ctime(&file_stat.st_mtime));
+    dirListPage.append(ctime(&fileStat.st_mtime));
     dirListPage.append("</td>\n");
     dirListPage.append("<td>\n");
-    if (!S_ISDIR(file_stat.st_mode))
-      dirListPage.append(toString(file_stat.st_size));
+    if (!S_ISDIR(fileStat.st_mode))
+      dirListPage.append(toString(fileStat.st_size));
     dirListPage.append("</td>\n");
     dirListPage.append("</tr>\n");
   }
@@ -487,8 +487,8 @@ int Response::buildHtmlIndex(std::string &dir_name, std::vector<uint8_t> &body, 
   dirListPage.append("</body>\n");
   dirListPage.append("</html>\n");
 
-  body.insert(body.begin(), dirListPage.begin(), dirListPage.end());
-  body_len = body.size();
+  body.assign(body.begin(), dirListPage.begin(), dirListPage.end());
+  bodyLen = body.size();
   return (0);
 }
 

@@ -27,7 +27,7 @@ class Response {
   bool isFileAllowed(Request &request, std::string &locationKey);
   bool initializeCgi(std::string &path, std::string &locationKey);
   std::string getErrorPage(short);
-  int buildHtmlIndex(std::string &dir_name, std::vector<uint8_t> &body, size_t &body_len);
+  int buildHtmlIndex(std::string &dirName, std::vector<uint8_t> &body, size_t &bodyLen);
   std::string extractFilename(const std::string &line);
   bool isBoundaryLine(const std::string &line, const std::string &boundary);
   bool isEndBoundaryLine(const std::string &line, const std::string &boundary);
