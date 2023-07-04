@@ -8,7 +8,7 @@ RM = rm -rf
 CPP = c++
 CPPFLAGS = -Wall -Wextra -Werror -std=c++98 -g3
 
-# Cores
+# Colors
 SET_COLOR = \033[0m
 WHITE = \033[0;37m
 WHITE_BOLD = \033[1;37m
@@ -19,13 +19,11 @@ YELLOW = \033[0;33m
 MAGENTA = \033[0;95m
 BG_GREEN = \033[42;1;37m
 
-# Fontes
-FILES = CgiController Client ConfigFile Location LogService main ManagerServ Parser Request Response Server Utils
+# Files
+FILES = CgiController Client ConfigFile Location LogService main ManagerServ Parser Request Response Server
 SRC_FILES = $(addprefix $(SRC_DIR),$(FILES))
 SRC = $(addsuffix .cpp, $(SRC_FILES))
 OBJ = $(patsubst $(SRC_DIR)%.cpp,$(OBJ_DIR)%.o,$(SRC))
-
-###
 
 OBJF = .cache_exists
 

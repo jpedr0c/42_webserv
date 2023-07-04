@@ -148,6 +148,10 @@ static std::string combinePaths(std::string p1, std::string p2, std::string p3) 
   return (p1 + p2 + p3);
 }
 
+std::string Response::getErrorPage(short statusCode) {
+  return ("<html>\r\n<head><title>" + toString(statusCode) + " " + Server::statusCodeString(statusCode) + " </title></head>\r\n" + "<body>\r\n" + "<center><h1>" + toString(statusCode) + " " + Server::statusCodeString(statusCode) + "</h1></center>\r\n");
+}
+
 static void replaceAlias(Location &location, Request &request, std::string &targetFile) {
   targetFile = combinePaths(location.getAlias(), request.getPath().substr(location.getPath().length()), "");
 }
@@ -424,6 +428,70 @@ void Response::buildErrorBody() {
   }
 }
 
+int Response::buildHtmlIndex(std::string &dir_name, std::vector<uint8_t> &body, size_t &body_len) {
+  struct dirent *entityStruct;
+  DIR *directory;
+  std::string dirListPage;
+
+  directory = opendir(dir_name.c_str());
+  if (directory == NULL) {
+    std::cerr << "opendir failed" << std::endl;
+    return (1);
+  }
+  dirListPage.append("<html>\n");
+  dirListPage.append("<head>\n");
+  dirListPage.append("<title> Index of");
+  dirListPage.append(dir_name);
+  dirListPage.append("</title>\n");
+  dirListPage.append("</head>\n");
+  dirListPage.append("<body >\n");
+  dirListPage.append("<h1> Index of " + dir_name + "</h1>\n");
+  dirListPage.append("<table style=\"width:80%; font-size: 15px\">\n");
+  dirListPage.append("<hr>\n");
+  dirListPage.append("<th style=\"text-align:left\"> File Name </th>\n");
+  dirListPage.append("<th style=\"text-align:left\"> Last Modification  </th>\n");
+  dirListPage.append("<th style=\"text-align:left\"> File Size </th>\n");
+
+  struct stat file_stat;
+  std::string file_path;
+
+  while ((entityStruct = readdir(directory)) != NULL) {
+    if (strcmp(entityStruct->d_name, ".") == 0)
+      continue;
+    file_path = dir_name + entityStruct->d_name;
+    stat(file_path.c_str(), &file_stat);
+    dirListPage.append("<tr>\n");
+    dirListPage.append("<td>\n");
+    dirListPage.append("<a href=\"");
+    dirListPage.append(entityStruct->d_name);
+    if (S_ISDIR(file_stat.st_mode))
+      dirListPage.append("/");
+    dirListPage.append("\">");
+    dirListPage.append(entityStruct->d_name);
+    if (S_ISDIR(file_stat.st_mode))
+      dirListPage.append("/");
+    dirListPage.append("</a>\n");
+    dirListPage.append("</td>\n");
+    dirListPage.append("<td>\n");
+    dirListPage.append(ctime(&file_stat.st_mtime));
+    dirListPage.append("</td>\n");
+    dirListPage.append("<td>\n");
+    if (!S_ISDIR(file_stat.st_mode))
+      dirListPage.append(toString(file_stat.st_size));
+    dirListPage.append("</td>\n");
+    dirListPage.append("</tr>\n");
+  }
+  dirListPage.append("</table>\n");
+  dirListPage.append("<hr>\n");
+
+  dirListPage.append("</body>\n");
+  dirListPage.append("</html>\n");
+
+  body.insert(body.begin(), dirListPage.begin(), dirListPage.end());
+  body_len = body.size();
+  return (0);
+}
+
 void Response::buildResponse() {
   if (reqError() || buildBody())
     buildErrorBody();
@@ -464,7 +532,7 @@ size_t Response::getLen() const {
 
 void Response::setStatusLine() {
   responseContent.append("HTTP/1.1 " + toString(code) + " ");
-  responseContent.append(statusCodeString(code));
+  responseContent.append(Server::statusCodeString(code));
   responseContent.append("\r\n");
 }
 

@@ -9,14 +9,11 @@ class Response {
   Response();
   Response(Request &);
   ~Response();
-
   std::string getRes();
   size_t getLen() const;
   int getCode() const;
-
   void setRequest(Request &);
   void setServer(Server &);
-
   void buildResponse();
   void clear();
   void handleCgi(Request &);
@@ -29,13 +26,12 @@ class Response {
   bool isValidFileType(std::string &path);
   bool isFileAllowed(Request &request, std::string &locationKey);
   bool initializeCgi(std::string &path, std::string &locationKey);
-  CgiController cgiObj;
-
+  std::string getErrorPage(short);
+  int buildHtmlIndex(std::string &dir_name, std::vector<uint8_t> &body, size_t &body_len);
   std::string extractFilename(const std::string &line);
   bool isBoundaryLine(const std::string &line, const std::string &boundary);
   bool isEndBoundaryLine(const std::string &line, const std::string &boundary);
   std::string removeBoundary(std::string &body, const std::string &boundary);
-
   bool isMethodNotAllowed(Location &location);
   bool isRequestBodySizeExceeded(const std::string &body, const Location &location);
   bool checkLocationReturn(Location &location);
@@ -43,17 +39,16 @@ class Response {
   bool isCgiExtension(const std::string &targetFile, const Location &location);
   bool handleIndexLocation(const std::string &indexLocation, bool autoindex);
   bool handleNonLocation(const std::string &root, Request &request);
-
   bool isBodySizeExceeded();
   bool handleTgt();
   bool handleGetMethod();
   bool handlePostMethod();
   bool handleDeleteMethod();
-
   std::string responseContent;
   bool hasMimeType(std::string &extension) const;
   std::string getMimeType(std::string extension) const;
 
+  CgiController cgiObj;
   Request request;
 
  private:

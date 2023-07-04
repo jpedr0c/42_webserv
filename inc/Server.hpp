@@ -26,9 +26,7 @@ class Server {
   ~Server();
   Server(const Server &other);
   Server &operator=(const Server &rhs);
-
   void initErrorPages(void);
-
   void setServerName(std::string server_name);
   void setHost(std::string parametr);
   void setRoot(std::string root);
@@ -39,7 +37,7 @@ class Server {
   void setIndex(std::string index);
   void setLocation(std::string nameLocation, std::vector<std::string> parametr);
   void setAutoindex(std::string autoindex);
-
+  static std::string statusCodeString(short);
   bool isValidHost(std::string host) const;
   bool isValidErrorPages();
   int isValidLocation(Location &location) const;

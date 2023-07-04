@@ -215,6 +215,14 @@ int CgiController::findStart(const std::string path, const std::string delim) {
   return path.find(delim);
 }
 
+unsigned int CgiController::fromHexToDec(const std::string &nb) {
+  unsigned int x;
+  std::stringstream ss;
+  ss << nb;
+  ss >> std::hex >> x;
+  return (x);
+}
+
 std::string CgiController::decode(std::string &path) {
   std::string decodedPath = path;
   size_t token = decodedPath.find("%");

@@ -14,7 +14,6 @@ Server::Server() {
 
 Server::~Server() {}
 
-/* copy constructor */
 Server::Server(const Server &other) {
   if (this != &other) {
     this->_server_name = other._server_name;
@@ -32,7 +31,6 @@ Server::Server(const Server &other) {
   return;
 }
 
-/* assinment operator */
 Server &Server::operator=(const Server &rhs) {
   if (this != &rhs) {
     this->_server_name = rhs._server_name;
@@ -50,7 +48,6 @@ Server &Server::operator=(const Server &rhs) {
   return (*this);
 }
 
-/* init error page by default */
 void Server::initErrorPages(void) {
   _error_pages[301] = "";
   _error_pages[302] = "";
@@ -69,7 +66,6 @@ void Server::initErrorPages(void) {
   _error_pages[505] = "";
 }
 
-/* Set functions */
 void Server::setServerName(std::string server_name) {
   checkToken(server_name);
   this->_server_name = server_name;
@@ -107,7 +103,7 @@ void Server::setPort(std::string parametr) {
     if (!std::isdigit(parametr[i]))
       throw ErrorException("Wrong syntax: port");
   }
-  port = ft_stoi((parametr));
+  port = std::atoi((parametr.c_str()));
   if (port < 1 || port > 65636)
     throw ErrorException("Wrong syntax: port");
   this->_port = (uint16_t)port;
@@ -122,9 +118,9 @@ void Server::setClientMaxBodySize(std::string parametr) {
     if (parametr[i] < '0' || parametr[i] > '9')
       throw ErrorException("Wrong syntax: client_max_body_size");
   }
-  if (!ft_stoi(parametr))
+  if (!std::atoi(parametr.c_str()))
     throw ErrorException("Wrong syntax: client_max_body_size");
-  body_size = ft_stoi(parametr);
+  body_size = std::atoi(parametr.c_str());
   this->maxBodySize = body_size;
 }
 
@@ -141,8 +137,69 @@ void Server::setAutoindex(std::string autoindex) {
     this->autoIndex = true;
 }
 
-/* checks if there is such a default error code. If there is, it overwrites the path to the file,
-otherwise it creates a new pair: error code - path to the file */
+std::string Server::statusCodeString(short statusCode) {
+  std::map<short, std::string> statusCodes;
+
+  statusCodes[100] = "Continue";
+  statusCodes[101] = "Switching Protocol";
+  statusCodes[200] = "OK";
+  statusCodes[201] = "Created";
+  statusCodes[202] = "Accepted";
+  statusCodes[203] = "Non-Authoritative Information";
+  statusCodes[204] = "No Content";
+  statusCodes[205] = "Reset Content";
+  statusCodes[206] = "Partial Content";
+  statusCodes[300] = "Multiple Choice";
+  statusCodes[301] = "Moved Permanently";
+  statusCodes[302] = "Moved Temporarily";
+  statusCodes[303] = "See Other";
+  statusCodes[304] = "Not Modified";
+  statusCodes[307] = "Temporary Redirect";
+  statusCodes[308] = "Permanent Redirect";
+  statusCodes[400] = "Bad Request";
+  statusCodes[401] = "Unauthorized";
+  statusCodes[403] = "Forbidden";
+  statusCodes[404] = "Not Found";
+  statusCodes[405] = "Method Not Allowed";
+  statusCodes[406] = "Not Acceptable";
+  statusCodes[407] = "Proxy Authentication Required";
+  statusCodes[408] = "Request Timeout";
+  statusCodes[409] = "Conflict";
+  statusCodes[410] = "Gone";
+  statusCodes[411] = "Length Required";
+  statusCodes[412] = "Precondition Failed";
+  statusCodes[413] = "Payload Too Large";
+  statusCodes[414] = "URI Too Long";
+  statusCodes[415] = "Unsupported Media Type";
+  statusCodes[416] = "Requested Range Not Satisfiable";
+  statusCodes[417] = "Expectation Failed";
+  statusCodes[418] = "I'm a teapot";
+  statusCodes[421] = "Misdirected Request";
+  statusCodes[425] = "Too Early";
+  statusCodes[426] = "Upgrade Required";
+  statusCodes[428] = "Precondition Required";
+  statusCodes[429] = "Too Many Requests";
+  statusCodes[431] = "Request Header Fields Too Large";
+  statusCodes[451] = "Unavailable for Legal Reasons";
+  statusCodes[500] = "Internal Server Error";
+  statusCodes[501] = "Not Implemented";
+  statusCodes[502] = "Bad Gateway";
+  statusCodes[503] = "Service Unavailable";
+  statusCodes[504] = "Gateway Timeout";
+  statusCodes[505] = "HTTP Version Not Supported";
+  statusCodes[506] = "Variant Also Negotiates";
+  statusCodes[507] = "Insufficient Storage";
+  statusCodes[510] = "Not Extended";
+  statusCodes[511] = "Network Authentication Required";
+
+  std::map<short, std::string>::iterator it = statusCodes.find(statusCode);
+  if (it != statusCodes.end()) {
+    return it->second;
+  } else {
+    return "Undefined";
+  }
+}
+
 void Server::setErrorPages(std::vector<std::string> &parametr) {
   if (parametr.empty())
     return;
@@ -155,7 +212,7 @@ void Server::setErrorPages(std::vector<std::string> &parametr) {
     }
     if (parametr[i].size() != 3)
       throw ErrorException("Error code is invalid");
-    short code_error = ft_stoi(parametr[i]);
+    short code_error = std::atoi(parametr[i].c_str());
     if (statusCodeString(code_error) == "Undefined" || code_error < 400)
       throw ErrorException("Incorrect error code: " + parametr[i]);
     i++;
@@ -175,7 +232,6 @@ void Server::setErrorPages(std::vector<std::string> &parametr) {
   }
 }
 
-/* parsing and set locations */
 void Server::setLocation(std::string path, std::vector<std::string> parametr) {
   Location new_location;
   std::vector<std::string> methods;
@@ -297,7 +353,6 @@ void Server::setFd(int fd) {
   this->_listen_fd = fd;
 }
 
-/* validation of parametrs */
 bool Server::isValidHost(std::string host) const {
   struct sockaddr_in sockaddr;
   return (inet_pton(AF_INET, host.c_str(), &(sockaddr.sin_addr)) ? true : false);
@@ -314,7 +369,6 @@ bool Server::isValidErrorPages() {
   return (true);
 }
 
-/* check parametrs of location */
 int Server::isValidLocation(Location &location) const {
   if (location.getPath() == "/cgi") {
     if (location.getCgiPath().empty() || location.getCgiExtension().empty() || location.getIndexLocation().empty())
@@ -375,7 +429,6 @@ int Server::isValidLocation(Location &location) const {
   return (0);
 }
 
-/* Get functions */
 const std::string &Server::getServerName() {
   return (this->_server_name);
 }
@@ -416,7 +469,6 @@ int Server::getFd() {
   return (this->_listen_fd);
 }
 
-/* the two functions below can be used later for response */
 const std::string &Server::getPathErrorPage(short key) {
   std::map<short, std::string>::iterator it = this->_error_pages.find(key);
   if (it == this->_error_pages.end())
@@ -424,7 +476,6 @@ const std::string &Server::getPathErrorPage(short key) {
   return (it->second);
 }
 
-/* find location by a name */  // do not using in parser, created for server manager
 const std::vector<Location>::iterator Server::getLocationKey(std::string key) {
   std::vector<Location>::iterator it;
   for (it = this->_locations.begin(); it != this->_locations.end(); it++) {
@@ -434,7 +485,6 @@ const std::vector<Location>::iterator Server::getLocationKey(std::string key) {
   throw ErrorException("Error: path to location not found");
 }
 
-/* check is a properly end of parametr */
 void Server::checkToken(std::string &parametr) {
   size_t pos = parametr.rfind(';');
   if (pos != parametr.size() - 1)
@@ -442,7 +492,6 @@ void Server::checkToken(std::string &parametr) {
   parametr.erase(pos);
 }
 
-/* check location for a dublicate */
 bool Server::checkLocaitons() const {
   if (this->_locations.size() < 2)
     return (false);
@@ -457,7 +506,6 @@ bool Server::checkLocaitons() const {
   return (false);
 }
 
-/* socket setup and binding */
 void Server::setupServer(void) {
   if ((_listen_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     LogService::printLog(RED, FAILURE, "Socket error %s   Closing ....", strerror(errno));
