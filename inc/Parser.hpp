@@ -17,8 +17,8 @@ class Parser {
   void splitServers(std::string &content);
   const std::string extractServersConfig(std::string &fileContent);
   bool areServersDuplicate(Server &currentServer, Server &nextServer);
-  void checkServers();
-  std::vector<std::string> splitParametrs(std::string inputStr, std::string delimeter);
+  void checkDuplicateServerConfigurations();
+  std::vector<std::string> splitParameters(std::string inputStr, std::string delimeter);
   void validateServerParametersSize(const std::vector<std::string> &parameters);
   void validateDuplicatePort(Server &server);
   void validateServerScopeCharacter(const std::string &parameter);
@@ -33,8 +33,8 @@ class Parser {
   void validateDuplicateAutoindex(bool flag_autoindex);
   void setDefaultServerValues(Server &server);
   void performServerValidations(Server &server);
-  void createServer(std::string &config, Server &server);
-  int createCluster(const std::string &config_file);
+  void createServerFromConfig(std::string &config, Server &server);
+  int parseServerConfigFile(const std::string &config_file);
 
  private:
   std::vector<Server> serverList;

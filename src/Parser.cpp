@@ -109,7 +109,7 @@ bool Parser::areServersDuplicate(Server &currentServer, Server &nextServer) {
   return (isPortDuplicate && isHostDuplicate && isNameDuplicate);
 }
 
-void Parser::checkServers() {
+void Parser::checkDuplicateServerConfigurations() {
   std::vector<Server>::iterator currentServer;
   std::vector<Server>::iterator nextServer;
 
@@ -126,7 +126,7 @@ void Parser::checkServers() {
   }
 }
 
-std::vector<std::string> Parser::splitParametrs(std::string inputStr, std::string delimeter) {
+std::vector<std::string> Parser::splitParameters(std::string inputStr, std::string delimeter) {
   std::vector<std::string> parameterList;
   std::string::size_type startPosition = 0;
   std::string::size_type endPosition = inputStr.find_first_of(delimeter, startPosition);
@@ -233,14 +233,14 @@ void Parser::performServerValidations(Server &server) {
     throw Error("Incorrect error page path or invalid number of error pages specified");
 }
 
-void Parser::createServer(std::string &configString, Server &server) {
+void Parser::createServerFromConfig(std::string &configString, Server &server) {
   std::vector<std::string> parameterList;
   std::vector<std::string> errorCode;
   int locationFlag = 1;
   bool isAutoindexEnable = false;
   bool isMaxSizeSet = false;
 
-  parameterList = splitParametrs(configString += ' ', std::string(" \n\t"));
+  parameterList = splitParameters(configString += ' ', std::string(" \n\t"));
   validateServerParametersSize(parameterList);
 
   for (size_t i = 0; i < parameterList.size(); i++) {
@@ -287,7 +287,7 @@ void Parser::createServer(std::string &configString, Server &server) {
   server.setErrorPages(errorCode);
 }
 
-int Parser::createCluster(const std::string &filePath) {
+int Parser::parseServerConfigFile(const std::string &filePath) {
   ConfigFile configFile;
   int fileType = configFile.getTypePath(filePath);
 
@@ -311,12 +311,12 @@ int Parser::createCluster(const std::string &filePath) {
 
   for (size_t i = 0; i < this->numberOfServers; i++) {
     Server server;
-    createServer(this->serverConfig[i], server);
+    createServerFromConfig(this->serverConfig[i], server);
     this->serverList.push_back(server);
   }
 
   if (this->numberOfServers > 1)
-    checkServers();
+    checkDuplicateServerConfigurations();
 
   return (0);
 }
