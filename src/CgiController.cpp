@@ -39,16 +39,8 @@ CgiController &CgiController::operator=(const CgiController &copy) {
   return (*this);
 }
 
-void CgiController::setCgiPid(pid_t cgiPid) {
-  this->cgiPid = cgiPid;
-}
-
 void CgiController::setCgiPath(const std::string &cgiPath) {
   this->cgiPath = cgiPath;
-}
-
-const std::map<std::string, std::string> &CgiController::getEnv() const {
-  return (this->env);
 }
 
 const pid_t &CgiController::getCgiPid() const {

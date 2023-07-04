@@ -38,9 +38,7 @@ class CgiController {
   void createArgv(const std::string &cgiExec);
   unsigned int fromHexToDec(const std::string &nb);
   void closePipes();
-  void setCgiPid(pid_t cgiPid);
   void setCgiPath(const std::string &cgiPath);
-  const std::map<std::string, std::string> &getEnv() const;
   const pid_t &getCgiPid() const;
   const std::string &getCgiPath() const;
   std::string getAfter(const std::string &path, char delim);
