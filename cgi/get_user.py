@@ -1,10 +1,18 @@
 #!/usr/bin/python3
 
 import cgi
-import sys
-import os
 
 form = cgi.FieldStorage()
+
+if "username" in form:
+    first_name = form.getvalue("username")
+else:
+    first_name = "Visitor"
+
+if "password" in form:
+    password = form.getvalue("password")
+else:
+    password = "default"
 
 first_name = form.getvalue("username")
 password = form.getvalue("password")
@@ -25,7 +33,7 @@ response_body = [
     '<p class="font-bold text-xs text-gray-300">*LGPD que se lasque</p>',
     "</div>",
     '<div class="flex bg-gradient-to-r from-rose-500 to-purple-600 p-1 rounded-lg hover:scale-105 transition-all duration-300">',
-    '<a href="../login.html"class="px-7 bg-black py-3 font-bold text-center rounded-md text-slate-100">Back to login</a>',
+    '<a href="../login.html" class="px-7 bg-black py-3 font-bold text-center rounded-md text-slate-100">Back to login</a>',
     "</div>",
     "</div>",
     "</body>",
