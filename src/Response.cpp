@@ -487,7 +487,7 @@ int Response::buildHtmlIndex(std::string &dirName, std::vector<uint8_t> &body, s
   dirListPage.append("</body>\n");
   dirListPage.append("</html>\n");
 
-  body.assign(body.begin(), dirListPage.begin(), dirListPage.end());
+  body.insert(body.begin(), dirListPage.begin(), dirListPage.end());
   bodyLen = body.size();
   return (0);
 }
