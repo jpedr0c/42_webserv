@@ -43,11 +43,3 @@ std::string ConfigFile::readFile(std::string path) {
   stream_binding << config_file.rdbuf();
   return (stream_binding.str());
 }
-
-std::string ConfigFile::getPath() {
-  return (this->path);
-}
-
-int ConfigFile::getSize() {
-  return (this->size);
-}
