@@ -37,6 +37,8 @@
 // # include <machine/types.h>
 #include <signal.h>
 
+#include <climits>
+
 /* Network */
 #include <arpa/inet.h>
 #include <netinet/in.h>
