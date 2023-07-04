@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
     std::string configFile = (argv[1]);
     Parser serverParser;
     ManagerServ managerServ;
-    serverParser.createCluster(configFile);
+    serverParser.parseServerConfigFile(configFile);
     managerServ.setupServers(serverParser.getServers());
     managerServ.processServerRequests();
   } catch (std::exception &err) {
