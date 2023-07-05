@@ -73,7 +73,7 @@ void Server::setHost(std::string param) {
   if (isValidHost(param))
     this->host = inet_addr(param.data());
   else
-    throw Error("Wrong syntax: host");
+    throw Error("Invalid host syntax. Please provide a valid host address");
 }
 
 void Server::setRoot(std::string root) {
@@ -90,7 +90,7 @@ void Server::setRoot(std::string root) {
   if (ConfigFile::getTypePath(full_root) == 2)
     this->root = full_root;
   else
-    throw Error("Wrong syntax: root");
+    throw Error("Invalid root directory. Please provide a valid directory path");
 }
 
 void Server::setPort(std::string param) {
@@ -102,12 +102,12 @@ void Server::setPort(std::string param) {
     if (std::isdigit(param[i]))
       isDigits = 1;
     else
-      throw Error("Wrong syntax: port");
+      throw Error("Invalid port syntax. The port should be a numeric value");
   }
   if (isDigits) {
     port = std::atoi((param.c_str()));
     if (port < 1 || port > 65636)
-      throw Error("Wrong syntax: port");
+      throw Error("Invalid port range. The port number should be between 1 and 65636");
     this->port = (uint16_t)port;
   }
 }
@@ -118,9 +118,9 @@ void Server::setClientMaxBodySize(std::string param) {
     checkToken(param);
     bodySize = std::strtoul(param.c_str(), NULL, 10);
     if (errno == ERANGE || bodySize > INT_MAX)
-      Error("Error: value too large maxBodySize");
+      Error("Invalid body size. The specified value exceeds the maximum limit");
   } catch (const std::exception& e) {
-    Error("Wrong syntax: client_max_body_size");
+    Error("Invalid syntax: client_max_body_size");
   }
   this->maxBodySize = bodySize;
 }
@@ -133,7 +133,7 @@ void Server::setIndex(std::string index) {
 void Server::setAutoindex(std::string autoindex) {
   checkToken(autoindex);
   if (autoindex != "on" && autoindex != "off")
-    throw Error("Wrong syntax: autoindex");
+    throw Error("Invalid syntax: autoindex. Please specify 'on' or 'off'");
   if (autoindex == "on")
     this->autoIndex = true;
 }
@@ -205,7 +205,7 @@ void Server::setErrorPages(std::vector<std::string>& param) {
   if (param.empty())
     return;
   if (param.size() % 2 != 0)
-    throw Error("Error page initialization failed");
+    throw Error("Error page initialization failed. Missing error code-path pairs");
 
   for (size_t i = 0; i < param.size() - 1; i += 2) {
     std::string codeStr = param[i];
@@ -353,7 +353,7 @@ void Server::handleCgiExtension(std::vector<std::string>& param, size_t& i, Loca
     } else {
       extension.push_back(param[i]);
       if (i + 1 >= param.size())
-        throw Error("Token is invalid");
+        throw Error("Invalid token");
     }
   }
   newLocation.setCgiExtension(extension);
@@ -369,10 +369,10 @@ void Server::handleCgiPath(std::vector<std::string>& param, size_t& i, Location&
     } else {
       path.push_back(param[i]);
       if (i + 1 >= param.size())
-        throw Error("Token is invalid");
+        throw Error("Invalid token");
     }
     if (param[i].find("/python") == std::string::npos)
-      throw Error("cgi_path is invalid");
+      throw Error("Invalid cgi path");
   }
   newLocation.setCgiPath(path);
 }
@@ -394,13 +394,13 @@ void Server::handleLocationDefaults(Location& newLocation, bool flagMaxSize) {
 
 void Server::handleLocationValidation(int valid) {
   if (valid == 1)
-    throw Error("Failed CGI validation");
+    throw Error("Invalid CGI configuration. CGI validation failed");
   else if (valid == 2)
-    throw Error("Failed path in location validation");
+    throw Error("Invalid path configuration. Path in location validation failed");
   else if (valid == 3)
-    throw Error("Failed redirection file in location validation");
+    throw Error("Invalid redirection file. Redirection file in location validation failed");
   else if (valid == 4)
-    throw Error("Failed alias file in location validation");
+    throw Error("Invalid alias file. Alias file in location validation failed");
 }
 
 void Server::setFd(int fd) {
@@ -550,7 +550,7 @@ int Server::getFd() {
 const std::string& Server::getPathErrorPage(short key) {
   std::map<short, std::string>::iterator it = this->errorPages.find(key);
   if (it == this->errorPages.end())
-    throw Error("Error_page does not exist");
+    throw Error("Specified error page does not exist");
   return (it->second);
 }
 
@@ -560,13 +560,13 @@ const std::vector<Location>::iterator Server::getLocationKey(std::string key) {
     if (it->getPath() == key)
       return (it);
   }
-  throw Error("Error: path to location not found");
+  throw Error("Path to location not found: " + key);
 }
 
 void Server::checkToken(std::string& param) {
   size_t pos = param.rfind(';');
   if (pos != param.size() - 1)
-    throw Error("Token is invalid");
+    throw Error("Invalid token. Token must end with a semicolon");
   param.erase(pos);
 }
 
@@ -586,7 +586,7 @@ bool Server::checkLocation() const {
 
 void Server::setupServer(void) {
   if ((listenFd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-    LogService::printLog(RED_BOLD, FAILURE, "Socket error %s   Closing ....", strerror(errno));
+    LogService::printLog(RED_BOLD, FAILURE, "Failed to create socket: %s. Closing...", strerror(errno));
 
   int option_value = 1;
   setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, &option_value, sizeof(int));
@@ -595,5 +595,5 @@ void Server::setupServer(void) {
   serverAddress.sin_addr.s_addr = host;
   serverAddress.sin_port = htons(port);
   if (bind(listenFd, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1)
-    LogService::printLog(RED_BOLD, FAILURE, "Bind error %s   Closing ....", strerror(errno));
+    LogService::printLog(RED_BOLD, FAILURE, "Failed to bind: %s. Closing...", strerror(errno));
 }
