@@ -83,15 +83,12 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
         } else if (character == 'D')
           httpMethod = DELETE;
         else if (character == 'H') {
-          errorCode = 501;
-          LogService::printLog(ORANGE, SUCCESS, "Unsupported method <%s>", "HEAD");
+          LogService::printErrorCodeLog(ORANGE, errorCode, 501, "Unsupported method <%s>", "HEAD");
           return;
         } else if (character == 'O') {
-          errorCode = 501;
-          LogService::printLog(ORANGE, SUCCESS, "Unsupported method <%s>", "OPTIONS");
+          LogService::printErrorCodeLog(ORANGE, errorCode, 501, "Unsupported method <%s>", "OPTIONS");
           return;
         } else {
-          errorCode = 501;
           LogService::printLog(ORANGE, SUCCESS, "Invalid character \"%s\"", character);
           return;
         }
@@ -102,16 +99,13 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
         if (character == 'O')
           httpMethod = POST;
         else if (character == 'U') {
-          errorCode = 501;
-          LogService::printLog(ORANGE, SUCCESS, "Unsupported method <%s>", "PUT");
+          LogService::printErrorCodeLog(ORANGE, errorCode, 501, "Unsupported method <%s>", "PUT");
           return;
         } else if (character == 'A') {
-          errorCode = 501;
-          LogService::printLog(ORANGE, SUCCESS, "Unsupported method <%s>", "PATCH");
+          LogService::printErrorCodeLog(ORANGE, errorCode, 501, "Unsupported method <%s>", "PATCH");
           return;
         } else {
-          errorCode = 501;
-          LogService::printLog(ORANGE, SUCCESS, "Invalid character \"%s\"", character);
+          LogService::printErrorCodeLog(ORANGE, errorCode, 501, "Invalid character \"%s\"", character);
           return;
         }
         httpMethod_index++;
@@ -122,8 +116,7 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
         if (character == httpMethodStr[httpMethod][httpMethod_index])
           httpMethod_index++;
         else {
-          errorCode = 501;
-          std::cout << "Method Error Request_Line and Character is = " << character << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 501, "Invalid character \"%s\"", character);
           return;
         }
 
@@ -133,8 +126,7 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
       }
       case Request_Line_First_Space: {
         if (character != ' ') {
-          errorCode = 400;
-          std::cout << "Bad Character (Request_Line_First_Space)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         parsingStatus = Request_Line_URI_Path_Slash;
@@ -145,8 +137,7 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
           parsingStatus = Request_Line_URI_Path;
           storage.clear();
         } else {
-          errorCode = 400;
-          std::cout << "Bad Character (Request_Line_URI_Path_Slash)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         break;
@@ -168,12 +159,10 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
           storage.clear();
           continue;
         } else if (!isValidURIChar(character)) {
-          errorCode = 400;
-          std::cout << "Bad Character (Request_Line_URI_Path)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         } else if (i > MAX_URI_LENGTH) {
-          errorCode = 414;
-          std::cout << "URI Too Long (Request_Line_URI_Path)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 414, "Long URI \"%s\"", character);
           return;
         }
         break;
@@ -190,12 +179,10 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
           storage.clear();
           continue;
         } else if (!isValidURIChar(character)) {
-          errorCode = 400;
-          std::cout << "Bad Character (Request_Line_URI_Query)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         } else if (i > MAX_URI_LENGTH) {
-          errorCode = 414;
-          std::cout << "URI Too Long (Request_Line_URI_Path)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 414, "Long URI \"%s\"", character);
           return;
         }
         break;
@@ -206,25 +193,21 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
           storage.clear();
           continue;
         } else if (!isValidURIChar(character)) {
-          errorCode = 400;
-          std::cout << "Bad Character (Request_Line_URI_Fragment)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         } else if (i > MAX_URI_LENGTH) {
-          errorCode = 414;
-          std::cout << "URI Too Long (Request_Line_URI_Path)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 414, "Long URI \"%s\"", character);
           return;
         }
         break;
       }
       case Request_Line_Ver: {
         if (isValidUriPosition(path)) {
-          errorCode = 400;
-          std::cout << "Request URI ERROR: goes before root !!" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         if (character != 'H') {
-          errorCode = 400;
-          std::cout << "Bad Character (Request_Line_Ver)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         parsingStatus = Request_Line_HT;
@@ -232,8 +215,7 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
       }
       case Request_Line_HT: {
         if (character != 'T') {
-          errorCode = 400;
-          std::cout << "Bad Character (Request_Line_HT)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         parsingStatus = Request_Line_HTT;
@@ -241,8 +223,7 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
       }
       case Request_Line_HTT: {
         if (character != 'T') {
-          errorCode = 400;
-          std::cout << "Bad Character (Request_Line_HTT)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         parsingStatus = Request_Line_HTTP;
@@ -250,8 +231,7 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
       }
       case Request_Line_HTTP: {
         if (character != 'P') {
-          errorCode = 400;
-          std::cout << "Bad Character (Request_Line_HTTP)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         parsingStatus = Request_Line_HTTP_Slash;
@@ -259,8 +239,7 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
       }
       case Request_Line_HTTP_Slash: {
         if (character != '/') {
-          errorCode = 400;
-          std::cout << "Bad Character (Request_Line_HTTP_Slash)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         parsingStatus = Request_Line_Major;
@@ -268,8 +247,7 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
       }
       case Request_Line_Major: {
         if (!isdigit(character)) {
-          errorCode = 400;
-          std::cout << "Bad Character (Request_Line_Major)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         verMajor = character;
@@ -279,8 +257,7 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
       }
       case Request_Line_Dot: {
         if (character != '.') {
-          errorCode = 400;
-          std::cout << "Bad Character (Request_Line_Dot)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         parsingStatus = Request_Line_Minor;
@@ -288,8 +265,7 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
       }
       case Request_Line_Minor: {
         if (!isdigit(character)) {
-          errorCode = 400;
-          std::cout << "Bad Character (Request_Line_Minor)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         verMinor = character;
@@ -298,8 +274,7 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
       }
       case Request_Line_CR: {
         if (character != '\r') {
-          errorCode = 400;
-          std::cout << "Bad Character (Request_Line_CR)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         parsingStatus = Request_Line_LF;
@@ -307,8 +282,7 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
       }
       case Request_Line_LF: {
         if (character != '\n') {
-          errorCode = 400;
-          std::cout << "Bad Character (Request_Line_LF)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         parsingStatus = Field_Name_Start;
@@ -321,8 +295,7 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
         else if (isValidTokenChar(character))
           parsingStatus = Field_Name;
         else {
-          errorCode = 400;
-          std::cout << "Bad Character (Field_Name_Start)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         break;
@@ -343,8 +316,7 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
           }
           continue;
         } else {
-          errorCode = 400;
-          std::cout << "Bad Character (Fields_End)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         break;
@@ -356,8 +328,7 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
           parsingStatus = Field_Value;
           continue;
         } else if (!isValidTokenChar(character)) {
-          errorCode = 400;
-          std::cout << "Bad Character (Field_Name)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         break;
@@ -377,16 +348,14 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
           parsingStatus = Field_Name_Start;
           continue;
         } else {
-          errorCode = 400;
-          std::cout << "Bad Character (Field_Value_End)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         break;
       }
       case Chunked_Length_Begin: {
         if (isxdigit(character) == 0) {
-          errorCode = 400;
-          std::cout << "Bad Character (Chunked_Length_Begin)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         s.str("");
@@ -418,8 +387,7 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
         if (character == '\r')
           parsingStatus = Chunked_Length_LF;
         else {
-          errorCode = 400;
-          std::cout << "Bad Character (Chunked_Length_CR)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         continue;
@@ -431,8 +399,7 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
           else
             parsingStatus = Chunked_Data;
         } else {
-          errorCode = 400;
-          std::cout << "Bad Character (Chunked_Length_LF)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         continue;
@@ -453,8 +420,7 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
         if (character == '\r')
           parsingStatus = Chunked_Data_LF;
         else {
-          errorCode = 400;
-          std::cout << "Bad Character (Chunked_Data_CR)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         continue;
@@ -463,16 +429,14 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
         if (character == '\n')
           parsingStatus = Chunked_Length_Begin;
         else {
-          errorCode = 400;
-          std::cout << "Bad Character (Chunked_Data_LF)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         continue;
       }
       case Chunked_End_CR: {
         if (character != '\r') {
-          errorCode = 400;
-          std::cout << "Bad Character (Chunked_End_CR)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         parsingStatus = Chunked_End_LF;
@@ -480,8 +444,7 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
       }
       case Chunked_End_LF: {
         if (character != '\n') {
-          errorCode = 400;
-          std::cout << "Bad Character (Chunked_End_LF)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         bodyDoneFlag = true;
