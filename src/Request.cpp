@@ -1,26 +1,26 @@
 #include "../inc/Request.hpp"
 
 Request::Request() {
-  httpMethod_str[::GET] = "GET";
-  httpMethod_str[::POST] = "POST";
-  httpMethod_str[::DELETE] = "DELETE";
+  httpMethodStr[::GET] = "GET";
+  httpMethodStr[::POST] = "POST";
+  httpMethodStr[::DELETE] = "DELETE";
   path = "";
   query = "";
-  _body_str = "";
-  _error_code = 0;
-  _chunk_length = 0;
+  bodyStr = "";
+  errorCode = 0;
+  chunkLength = 0;
   httpMethod = NONE;
   httpMethod_index = 1;
-  parsingStatus = Request_Line;
-  _fields_done_flag = false;
-  _body_flag = false;
-  _body_done_flag = false;
-  _chunked_flag = false;
-  _body_length = 0;
-  _storage = "";
-  _key_storage = "";
-  _multiform_flag = false;
-  _boundary = "";
+  parsingStatus = REQUEST_LINE;
+  fieldsDoneFlag = false;
+  bodyFlag = false;
+  bodyDoneFlag = false;
+  chunkedFlag = false;
+  bodyLength = 0;
+  storage = "";
+  keyStorage = "";
+  multiformFlag = false;
+  boundary = "";
 }
 
 Request::~Request() {}
@@ -74,442 +74,405 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
   for (size_t i = 0; i < size; ++i) {
     character = data[i];
     switch (parsingStatus) {
-      case Request_Line: {
+      case REQUEST_LINE: {
         if (character == 'G')
           httpMethod = GET;
         else if (character == 'P') {
-          parsingStatus = Request_Line_Post_Put;
+          parsingStatus = REQUEST_LINE_POST_PUT;
           break;
         } else if (character == 'D')
           httpMethod = DELETE;
         else if (character == 'H') {
-          _error_code = 501;
-          LogService::printLog(ORANGE, SUCCESS, "Unsupported method <%s>", "HEAD");
+          LogService::printErrorCodeLog(ORANGE, errorCode, 501, "Unsupported method <%s>", "HEAD");
           return;
         } else if (character == 'O') {
-          _error_code = 501;
-          LogService::printLog(ORANGE, SUCCESS, "Unsupported method <%s>", "OPTIONS");
+          LogService::printErrorCodeLog(ORANGE, errorCode, 501, "Unsupported method <%s>", "OPTIONS");
           return;
         } else {
-          _error_code = 501;
           LogService::printLog(ORANGE, SUCCESS, "Invalid character \"%s\"", character);
           return;
         }
-        parsingStatus = Request_Line_Method;
+        parsingStatus = REQUEST_LINE_METHOD;
         break;
       }
-      case Request_Line_Post_Put: {
+      case REQUEST_LINE_POST_PUT: {
         if (character == 'O')
           httpMethod = POST;
         else if (character == 'U') {
-          _error_code = 501;
-          LogService::printLog(ORANGE, SUCCESS, "Unsupported method <%s>", "PUT");
+          LogService::printErrorCodeLog(ORANGE, errorCode, 501, "Unsupported method <%s>", "PUT");
           return;
         } else if (character == 'A') {
-          _error_code = 501;
-          LogService::printLog(ORANGE, SUCCESS, "Unsupported method <%s>", "PATCH");
+          LogService::printErrorCodeLog(ORANGE, errorCode, 501, "Unsupported method <%s>", "PATCH");
           return;
         } else {
-          _error_code = 501;
-          LogService::printLog(ORANGE, SUCCESS, "Invalid character \"%s\"", character);
+          LogService::printErrorCodeLog(ORANGE, errorCode, 501, "Invalid character \"%s\"", character);
           return;
         }
         httpMethod_index++;
-        parsingStatus = Request_Line_Method;
+        parsingStatus = REQUEST_LINE_METHOD;
         break;
       }
-      case Request_Line_Method: {
-        if (character == httpMethod_str[httpMethod][httpMethod_index])
+      case REQUEST_LINE_METHOD: {
+        if (character == httpMethodStr[httpMethod][httpMethod_index])
           httpMethod_index++;
         else {
-          _error_code = 501;
-          std::cout << "Method Error Request_Line and Character is = " << character << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 501, "Invalid character \"%s\"", character);
           return;
         }
 
-        if ((size_t)httpMethod_index == httpMethod_str[httpMethod].length())
-          parsingStatus = Request_Line_First_Space;
+        if ((size_t)httpMethod_index == httpMethodStr[httpMethod].length())
+          parsingStatus = REQUEST_LINE_FIRST_SPACE;
         break;
       }
-      case Request_Line_First_Space: {
+      case REQUEST_LINE_FIRST_SPACE: {
         if (character != ' ') {
-          _error_code = 400;
-          std::cout << "Bad Character (Request_Line_First_Space)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
-        parsingStatus = Request_Line_URI_Path_Slash;
+        parsingStatus = REQUEST_LINE_URI_PATH_SLASH;
         continue;
       }
-      case Request_Line_URI_Path_Slash: {
+      case REQUEST_LINE_URI_PATH_SLASH: {
         if (character == '/') {
-          parsingStatus = Request_Line_URI_Path;
-          _storage.clear();
+          parsingStatus = REQUEST_LINE_URI_PATH;
+          storage.clear();
         } else {
-          _error_code = 400;
-          std::cout << "Bad Character (Request_Line_URI_Path_Slash)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
         break;
       }
-      case Request_Line_URI_Path: {
+      case REQUEST_LINE_URI_PATH: {
         if (character == ' ') {
-          parsingStatus = Request_Line_Ver;
-          path.append(_storage);
-          _storage.clear();
+          parsingStatus = REQUEST_LINE_VER;
+          path.append(storage);
+          storage.clear();
           continue;
         } else if (character == '?') {
-          parsingStatus = Request_Line_URI_Query;
-          path.append(_storage);
-          _storage.clear();
+          parsingStatus = REQUEST_LINE_URI_QUERY;
+          path.append(storage);
+          storage.clear();
           continue;
         } else if (character == '#') {
-          parsingStatus = Request_Line_URI_Fragment;
-          path.append(_storage);
-          _storage.clear();
+          parsingStatus = REQUEST_LINE_URI_FRAGMENT;
+          path.append(storage);
+          storage.clear();
           continue;
         } else if (!isValidURIChar(character)) {
-          _error_code = 400;
-          std::cout << "Bad Character (Request_Line_URI_Path)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         } else if (i > MAX_URI_LENGTH) {
-          _error_code = 414;
-          std::cout << "URI Too Long (Request_Line_URI_Path)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 414, "URI exceeds maximum length: \"%s\"", character);
           return;
         }
         break;
       }
-      case Request_Line_URI_Query: {
+      case REQUEST_LINE_URI_QUERY: {
         if (character == ' ') {
-          parsingStatus = Request_Line_Ver;
-          query.append(_storage);
-          _storage.clear();
+          parsingStatus = REQUEST_LINE_VER;
+          query.append(storage);
+          storage.clear();
           continue;
         } else if (character == '#') {
-          parsingStatus = Request_Line_URI_Fragment;
-          query.append(_storage);
-          _storage.clear();
+          parsingStatus = REQUEST_LINE_URI_FRAGMENT;
+          query.append(storage);
+          storage.clear();
           continue;
         } else if (!isValidURIChar(character)) {
-          _error_code = 400;
-          std::cout << "Bad Character (Request_Line_URI_Query)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         } else if (i > MAX_URI_LENGTH) {
-          _error_code = 414;
-          std::cout << "URI Too Long (Request_Line_URI_Path)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 414, "URI exceeds maximum length: \"%s\"", character);
           return;
         }
         break;
       }
-      case Request_Line_URI_Fragment: {
+      case REQUEST_LINE_URI_FRAGMENT: {
         if (character == ' ') {
-          parsingStatus = Request_Line_Ver;
-          _storage.clear();
+          parsingStatus = REQUEST_LINE_VER;
+          storage.clear();
           continue;
         } else if (!isValidURIChar(character)) {
-          _error_code = 400;
-          std::cout << "Bad Character (Request_Line_URI_Fragment)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         } else if (i > MAX_URI_LENGTH) {
-          _error_code = 414;
-          std::cout << "URI Too Long (Request_Line_URI_Path)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 414, "URI exceeds maximum length: \"%s\"", character);
           return;
         }
         break;
       }
-      case Request_Line_Ver: {
+      case REQUEST_LINE_VER: {
         if (isValidUriPosition(path)) {
-          _error_code = 400;
-          std::cout << "Request URI ERROR: goes before root !!" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
         if (character != 'H') {
-          _error_code = 400;
-          std::cout << "Bad Character (Request_Line_Ver)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
-        parsingStatus = Request_Line_HT;
+        parsingStatus = REQUEST_LINE_HT;
         break;
       }
-      case Request_Line_HT: {
+      case REQUEST_LINE_HT: {
         if (character != 'T') {
-          _error_code = 400;
-          std::cout << "Bad Character (Request_Line_HT)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
-        parsingStatus = Request_Line_HTT;
+        parsingStatus = REQUEST_LINE_HTT;
         break;
       }
-      case Request_Line_HTT: {
+      case REQUEST_LINE_HTT: {
         if (character != 'T') {
-          _error_code = 400;
-          std::cout << "Bad Character (Request_Line_HTT)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
-        parsingStatus = Request_Line_HTTP;
+        parsingStatus = REQUEST_LINE_HTTP;
         break;
       }
-      case Request_Line_HTTP: {
+      case REQUEST_LINE_HTTP: {
         if (character != 'P') {
-          _error_code = 400;
-          std::cout << "Bad Character (Request_Line_HTTP)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
-        parsingStatus = Request_Line_HTTP_Slash;
+        parsingStatus = REQUEST_LINE_HTTP_SLASH;
         break;
       }
-      case Request_Line_HTTP_Slash: {
+      case REQUEST_LINE_HTTP_SLASH: {
         if (character != '/') {
-          _error_code = 400;
-          std::cout << "Bad Character (Request_Line_HTTP_Slash)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
-        parsingStatus = Request_Line_Major;
+        parsingStatus = REQUEST_LINE_MAJOR;
         break;
       }
-      case Request_Line_Major: {
+      case REQUEST_LINE_MAJOR: {
         if (!isdigit(character)) {
-          _error_code = 400;
-          std::cout << "Bad Character (Request_Line_Major)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
-        _ver_major = character;
+        verMajor = character;
 
-        parsingStatus = Request_Line_Dot;
+        parsingStatus = REQUEST_LINE_DOT;
         break;
       }
-      case Request_Line_Dot: {
+      case REQUEST_LINE_DOT: {
         if (character != '.') {
-          _error_code = 400;
-          std::cout << "Bad Character (Request_Line_Dot)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
-        parsingStatus = Request_Line_Minor;
+        parsingStatus = REQUEST_LINE_MINOR;
         break;
       }
-      case Request_Line_Minor: {
+      case REQUEST_LINE_MINOR: {
         if (!isdigit(character)) {
-          _error_code = 400;
-          std::cout << "Bad Character (Request_Line_Minor)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
-        _ver_minor = character;
-        parsingStatus = Request_Line_CR;
+        verMinor = character;
+        parsingStatus = REQUEST_LINE_CR;
         break;
       }
-      case Request_Line_CR: {
+      case REQUEST_LINE_CR: {
         if (character != '\r') {
-          _error_code = 400;
-          std::cout << "Bad Character (Request_Line_CR)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
-        parsingStatus = Request_Line_LF;
+        parsingStatus = REQUEST_LINE_LF;
         break;
       }
-      case Request_Line_LF: {
+      case REQUEST_LINE_LF: {
         if (character != '\n') {
-          _error_code = 400;
-          std::cout << "Bad Character (Request_Line_LF)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
-        parsingStatus = Field_Name_Start;
-        _storage.clear();
+        parsingStatus = FIELD_NAME_START;
+        storage.clear();
         continue;
       }
-      case Field_Name_Start: {
+      case FIELD_NAME_START: {
         if (character == '\r')
-          parsingStatus = Fields_End;
+          parsingStatus = FIELDS_END;
         else if (isValidTokenChar(character))
-          parsingStatus = Field_Name;
+          parsingStatus = FIELD_NAME;
         else {
-          _error_code = 400;
-          std::cout << "Bad Character (Field_Name_Start)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
         break;
       }
-      case Fields_End: {
+      case FIELDS_END: {
         if (character == '\n') {
-          _storage.clear();
-          _fields_done_flag = true;
-          _handle_headers();
-          if (_body_flag == 1) {
-            if (_chunked_flag == true)
-              parsingStatus = Chunked_Length_Begin;
+          storage.clear();
+          fieldsDoneFlag = true;
+          extractRequestHeaders();
+          if (bodyFlag == 1) {
+            if (chunkedFlag == true)
+              parsingStatus = CHUNKED_LENGTH_BEGIN;
             else {
-              parsingStatus = Message_Body;
+              parsingStatus = MESSAGE_BODY;
             }
           } else {
-            parsingStatus = Parsing_Done;
+            parsingStatus = PARSING_DONE;
           }
           continue;
         } else {
-          _error_code = 400;
-          std::cout << "Bad Character (Fields_End)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
         break;
       }
-      case Field_Name: {
+      case FIELD_NAME: {
         if (character == ':') {
-          _key_storage = _storage;
-          _storage.clear();
-          parsingStatus = Field_Value;
+          keyStorage = storage;
+          storage.clear();
+          parsingStatus = FIELD_VALUE;
           continue;
         } else if (!isValidTokenChar(character)) {
-          _error_code = 400;
-          std::cout << "Bad Character (Field_Name)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
         break;
       }
-      case Field_Value: {
+      case FIELD_VALUE: {
         if (character == '\r') {
-          setHeader(_key_storage, _storage);
-          _key_storage.clear();
-          _storage.clear();
-          parsingStatus = Field_Value_End;
+          setHeader(keyStorage, storage);
+          keyStorage.clear();
+          storage.clear();
+          parsingStatus = FIELD_VALUE_END;
           continue;
         }
         break;
       }
-      case Field_Value_End: {
+      case FIELD_VALUE_END: {
         if (character == '\n') {
-          parsingStatus = Field_Name_Start;
+          parsingStatus = FIELD_NAME_START;
           continue;
         } else {
-          _error_code = 400;
-          std::cout << "Bad Character (Field_Value_End)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
         break;
       }
-      case Chunked_Length_Begin: {
+      case CHUNKED_LENGTH_BEGIN: {
         if (isxdigit(character) == 0) {
-          _error_code = 400;
-          std::cout << "Bad Character (Chunked_Length_Begin)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
         s.str("");
         s.clear();
         s << character;
-        s >> std::hex >> _chunk_length;
-        if (_chunk_length == 0)
-          parsingStatus = Chunked_Length_CR;
+        s >> std::hex >> chunkLength;
+        if (chunkLength == 0)
+          parsingStatus = CHUNKED_LENGTH_CR;
         else
-          parsingStatus = Chunked_Length;
+          parsingStatus = CHUNKED_LENGTH;
         continue;
       }
-      case Chunked_Length: {
+      case CHUNKED_LENGTH: {
         if (isxdigit(character) != 0) {
           int temp_len = 0;
           s.str("");
           s.clear();
           s << character;
           s >> std::hex >> temp_len;
-          _chunk_length *= 16;
-          _chunk_length += temp_len;
+          chunkLength *= 16;
+          chunkLength += temp_len;
         } else if (character == '\r')
-          parsingStatus = Chunked_Length_LF;
+          parsingStatus = CHUNKED_END_LF;
         else
-          parsingStatus = Chunked_Ignore;
+          parsingStatus = CHUNKED_IGNORE;
         continue;
       }
-      case Chunked_Length_CR: {
+      case CHUNKED_LENGTH_CR: {
         if (character == '\r')
-          parsingStatus = Chunked_Length_LF;
+          parsingStatus = CHUNKED_END_LF;
         else {
-          _error_code = 400;
-          std::cout << "Bad Character (Chunked_Length_CR)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
         continue;
       }
-      case Chunked_Length_LF: {
+      case CHUNKED_LENGTH_LF: {
         if (character == '\n') {
-          if (_chunk_length == 0)
-            parsingStatus = Chunked_End_CR;
+          if (chunkLength == 0)
+            parsingStatus = CHUNKED_END_CR;
           else
-            parsingStatus = Chunked_Data;
+            parsingStatus = CHUNKED_DATA;
         } else {
-          _error_code = 400;
-          std::cout << "Bad Character (Chunked_Length_LF)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
         continue;
       }
-      case Chunked_Ignore: {
+      case CHUNKED_IGNORE: {
         if (character == '\r')
-          parsingStatus = Chunked_Length_LF;
+          parsingStatus = CHUNKED_END_LF;
         continue;
       }
-      case Chunked_Data: {
-        _body.push_back(character);
-        --_chunk_length;
-        if (_chunk_length == 0)
-          parsingStatus = Chunked_Data_CR;
+      case CHUNKED_DATA: {
+        body.push_back(character);
+        --chunkLength;
+        if (chunkLength == 0)
+          parsingStatus = CHUNKED_DATA_CR;
         continue;
       }
-      case Chunked_Data_CR: {
+      case CHUNKED_DATA_CR: {
         if (character == '\r')
-          parsingStatus = Chunked_Data_LF;
+          parsingStatus = CHUNKED_DATA_LF;
         else {
-          _error_code = 400;
-          std::cout << "Bad Character (Chunked_Data_CR)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
         continue;
       }
-      case Chunked_Data_LF: {
+      case CHUNKED_DATA_LF: {
         if (character == '\n')
-          parsingStatus = Chunked_Length_Begin;
+          parsingStatus = CHUNKED_LENGTH_BEGIN;
         else {
-          _error_code = 400;
-          std::cout << "Bad Character (Chunked_Data_LF)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
         continue;
       }
-      case Chunked_End_CR: {
+      case CHUNKED_END_CR: {
         if (character != '\r') {
-          _error_code = 400;
-          std::cout << "Bad Character (Chunked_End_CR)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
-        parsingStatus = Chunked_End_LF;
+        parsingStatus = CHUNKED_END_LF;
         continue;
       }
-      case Chunked_End_LF: {
+      case CHUNKED_END_LF: {
         if (character != '\n') {
-          _error_code = 400;
-          std::cout << "Bad Character (Chunked_End_LF)" << std::endl;
+          LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Unexpected character \"%s\" found", character);
           return;
         }
-        _body_done_flag = true;
-        parsingStatus = Parsing_Done;
+        bodyDoneFlag = true;
+        parsingStatus = PARSING_DONE;
         continue;
       }
-      case Message_Body: {
-        if (_body.size() < _body_length)
-          _body.push_back(character);
-        if (_body.size() == _body_length) {
-          _body_done_flag = true;
-          parsingStatus = Parsing_Done;
+      case MESSAGE_BODY: {
+        if (body.size() < bodyLength)
+          body.push_back(character);
+        if (body.size() == bodyLength) {
+          bodyDoneFlag = true;
+          parsingStatus = PARSING_DONE;
         }
         break;
       }
-      case Parsing_Done: {
+      case PARSING_DONE: {
         return;
       }
     }
-    _storage += character;
+    storage += character;
   }
-  if (parsingStatus == Parsing_Done) {
-    _body_str.append((char *)_body.data(), _body.size());
+  if (parsingStatus == PARSING_DONE) {
+    bodyStr.append((char *)body.data(), body.size());
   }
 }
 
 bool Request::isParsingDone() {
-  return (parsingStatus == Parsing_Done);
+  return (parsingStatus == PARSING_DONE);
 }
 
 HttpMethod &Request::getHttpMethod() {
@@ -533,29 +496,29 @@ const std::map<std::string, std::string> &Request::getHeaders() const {
 }
 
 std::string Request::getMethodStr() {
-  return (httpMethod_str[httpMethod]);
+  return (httpMethodStr[httpMethod]);
 }
 
 std::string &Request::getBody() {
-  return (_body_str);
+  return (bodyStr);
 }
 
 std::string Request::getServerName() {
-  return (this->_server_name);
+  return (this->serverName);
 }
 
 bool Request::getMultiformFlag() {
-  return (this->_multiform_flag);
+  return (this->multiformFlag);
 }
 
 std::string &Request::getBoundary() {
-  return (this->_boundary);
+  return (this->boundary);
 }
 
 void Request::setBody(std::string body) {
-  _body.clear();
-  _body.insert(_body.begin(), body.begin(), body.end());
-  _body_str = body;
+  body.clear();
+  body.insert(body.begin(), body.begin(), body.end());
+  bodyStr = body;
 }
 
 void Request::setHeader(std::string &name, std::string &value) {
@@ -568,64 +531,64 @@ void Request::setMaxBodySize(size_t size) {
   maxBodySize = size;
 }
 
-void Request::_handle_headers() {
+void Request::extractRequestHeaders() {
   std::stringstream ss;
 
   if (headerList.count("content-length")) {
-    _body_flag = true;
+    bodyFlag = true;
     ss << headerList["content-length"];
-    ss >> _body_length;
+    ss >> bodyLength;
   }
   if (headerList.count("transfer-encoding")) {
     if (headerList["transfer-encoding"].find_first_of("chunked") != std::string::npos)
-      _chunked_flag = true;
-    _body_flag = true;
+      chunkedFlag = true;
+    bodyFlag = true;
   }
   if (headerList.count("host")) {
     size_t pos = headerList["host"].find_first_of(':');
-    _server_name = headerList["host"].substr(0, pos);
+    serverName = headerList["host"].substr(0, pos);
   }
   if (headerList.count("content-type") && headerList["content-type"].find("multipart/form-data") != std::string::npos) {
     size_t pos = headerList["content-type"].find("boundary=", 0);
     if (pos != std::string::npos)
-      this->_boundary = headerList["content-type"].substr(pos + 9, headerList["content-type"].size());
-    this->_multiform_flag = true;
+      this->boundary = headerList["content-type"].substr(pos + 9, headerList["content-type"].size());
+    this->multiformFlag = true;
   }
 }
 
-short Request::errorCode() {
-  return (this->_error_code);
+short Request::errorCodes() {
+  return (this->errorCode);
 }
 
 void Request::setErrorCode(short status) {
-  this->_error_code = status;
+  this->errorCode = status;
 }
 
 void Request::clear() {
   path.clear();
-  _error_code = 0;
+  errorCode = 0;
   query.clear();
   httpMethod = NONE;
   httpMethod_index = 1;
-  parsingStatus = Request_Line;
-  _body_length = 0;
-  _chunk_length = 0x0;
-  _storage.clear();
-  _body_str = "";
-  _key_storage.clear();
+  parsingStatus = REQUEST_LINE;
+  bodyLength = 0;
+  chunkLength = 0x0;
+  storage.clear();
+  bodyStr = "";
+  keyStorage.clear();
   headerList.clear();
-  _server_name.clear();
-  _body.clear();
-  _boundary.clear();
-  _fields_done_flag = false;
-  _body_flag = false;
-  _body_done_flag = false;
-  _complete_flag = false;
-  _chunked_flag = false;
-  _multiform_flag = false;
+  serverName.clear();
+  body.clear();
+  boundary.clear();
+  fieldsDoneFlag = false;
+  bodyFlag = false;
+  bodyDoneFlag = false;
+  completeFlag = false;
+  chunkedFlag = false;
+  multiformFlag = false;
 }
 
-bool Request::keepAlive() {
+bool Request::isConnectionKeepAlive() {
   if (headerList.count("connection")) {
     if (headerList["connection"].find("close", 0) != std::string::npos)
       return (false);

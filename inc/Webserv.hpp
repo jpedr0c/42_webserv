@@ -4,47 +4,35 @@
 
 #include <iomanip>
 #include <iostream>
-// # include <fstream>
 #include <dirent.h>
 #include <fcntl.h>
 #include <unistd.h>
-
 #include <cstring>
 #include <sstream>
 #include <string>
-// # include <bits/stdc++.h>
 #include <cctype>
 #include <cstdarg>
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
 #include <sstream>
-
-/* STL Containers */
 #include <algorithm>
 #include <iterator>
 #include <list>
 #include <map>
 #include <set>
 #include <vector>
-
-/* System */
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
-// # include <machine/types.h>
 #include <signal.h>
-
 #include <climits>
-
-/* Network */
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/select.h>
 #include <sys/socket.h>
-
 #include "CgiController.hpp"
 #include "ConfigFile.hpp"
 #include "Location.hpp"

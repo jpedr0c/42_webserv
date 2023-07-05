@@ -11,41 +11,41 @@ enum HttpMethod {
 };
 
 enum ParsingState {
-  Request_Line,
-  Request_Line_Post_Put,
-  Request_Line_Method,
-  Request_Line_First_Space,
-  Request_Line_URI_Path_Slash,
-  Request_Line_URI_Path,
-  Request_Line_URI_Query,
-  Request_Line_URI_Fragment,
-  Request_Line_Ver,
-  Request_Line_HT,
-  Request_Line_HTT,
-  Request_Line_HTTP,
-  Request_Line_HTTP_Slash,
-  Request_Line_Major,
-  Request_Line_Dot,
-  Request_Line_Minor,
-  Request_Line_CR,
-  Request_Line_LF,
-  Field_Name_Start,
-  Fields_End,
-  Field_Name,
-  Field_Value,
-  Field_Value_End,
-  Chunked_Length_Begin,
-  Chunked_Length,
-  Chunked_Ignore,
-  Chunked_Length_CR,
-  Chunked_Length_LF,
-  Chunked_Data,
-  Chunked_Data_CR,
-  Chunked_Data_LF,
-  Chunked_End_CR,
-  Chunked_End_LF,
-  Message_Body,
-  Parsing_Done
+  REQUEST_LINE,
+  REQUEST_LINE_POST_PUT,
+  REQUEST_LINE_METHOD,
+  REQUEST_LINE_FIRST_SPACE,
+  REQUEST_LINE_URI_PATH_SLASH,
+  REQUEST_LINE_URI_PATH,
+  REQUEST_LINE_URI_QUERY,
+  REQUEST_LINE_URI_FRAGMENT,
+  REQUEST_LINE_VER,
+  REQUEST_LINE_HT,
+  REQUEST_LINE_HTT,
+  REQUEST_LINE_HTTP,
+  REQUEST_LINE_HTTP_SLASH,
+  REQUEST_LINE_MAJOR,
+  REQUEST_LINE_DOT,
+  REQUEST_LINE_MINOR,
+  REQUEST_LINE_CR,
+  REQUEST_LINE_LF,
+  FIELD_NAME_START,
+  FIELDS_END,
+  FIELD_NAME,
+  FIELD_VALUE,
+  FIELD_VALUE_END,
+  CHUNKED_LENGTH_BEGIN,
+  CHUNKED_LENGTH,
+  CHUNKED_IGNORE,
+  CHUNKED_LENGTH_CR,
+  CHUNKED_LENGTH_LF,
+  CHUNKED_DATA,
+  CHUNKED_DATA_CR,
+  CHUNKED_DATA_LF,
+  CHUNKED_END_CR,
+  CHUNKED_END_LF,
+  MESSAGE_BODY,
+  PARSING_DONE
 };
 
 class Request {
@@ -77,38 +77,38 @@ class Request {
   void parseHTTPRequestData(char *data, size_t size);
   bool isParsingDone();
   void clear();
-  short errorCode();
+  short errorCodes();
   void setErrorCode(short status);
-  bool keepAlive();
+  bool isConnectionKeepAlive();
 
  private:
   std::string path;
   std::string query;
   std::map<std::string, std::string> headerList;
-  std::vector<u_int8_t> _body;
-  std::string _boundary;
+  std::vector<u_int8_t> body;
+  std::string boundary;
   HttpMethod httpMethod;
-  std::map<u_int8_t, std::string> httpMethod_str;
+  std::map<u_int8_t, std::string> httpMethodStr;
   ParsingState parsingStatus;
   size_t maxBodySize;
-  size_t _body_length;
-  short _error_code;
-  size_t _chunk_length;
-  std::string _storage;
-  std::string _key_storage;
+  size_t bodyLength;
+  short errorCode;
+  size_t chunkLength;
+  std::string storage;
+  std::string keyStorage;
   short httpMethod_index;
-  u_int8_t _ver_major;
-  u_int8_t _ver_minor;
-  std::string _server_name;
-  std::string _body_str;
-  bool _fields_done_flag;
-  bool _body_flag;
-  bool _body_done_flag;
-  bool _complete_flag;
-  bool _chunked_flag;
-  bool _multiform_flag;
+  u_int8_t verMajor;
+  u_int8_t verMinor;
+  std::string serverName;
+  std::string bodyStr;
+  bool fieldsDoneFlag;
+  bool bodyFlag;
+  bool bodyDoneFlag;
+  bool completeFlag;
+  bool chunkedFlag;
+  bool multiformFlag;
 
-  void _handle_headers();
+  void extractRequestHeaders();
 };
 
 #endif

@@ -23,8 +23,7 @@ void LogService::printLog(const char* color, ExitStatus status, const char* str,
   std::cout << color << LogService::getCurrentDateTime() << output << RESET << std::endl;
 }
 
-void LogService::printErrorCodeLog(const char* color, short errorCode, const char* str, ...) {
-  Request request;
+void LogService::printErrorCodeLog(const char* color, short& errorCode, short code, const char* str, ...) {
   char output[8192];
   va_list args;
 
@@ -32,7 +31,7 @@ void LogService::printErrorCodeLog(const char* color, short errorCode, const cha
   vsnprintf(output, sizeof(output), str, args);
   va_end(args);
 
-  request.setErrorCode(errorCode);
+  errorCode = code;
   std::cout << color << LogService::getCurrentDateTime() << output << RESET << std::endl;
   return;
 }

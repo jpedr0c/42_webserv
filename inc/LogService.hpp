@@ -23,7 +23,7 @@ class LogService {
  public:
   static std::string getCurrentDateTime();
   static void printLog(const char* color, ExitStatus status, const char* str, ...);
-  static void printErrorCodeLog(const char* color, short errorCode, const char* str, ...);
+  static void printErrorCodeLog(const char* color, short& errorCode, short code, const char* str, ...);
   static void logStartServer(Server& server);
 };
 

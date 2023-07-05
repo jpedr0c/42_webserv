@@ -67,7 +67,6 @@ class Response {
   std::map<std::string, std::string> mimeTypes;
 
   int buildBody();
-  size_t file_size();
   void setStatusLine();
   void setHeaders();
   void setServerDefaultErrorPages();
