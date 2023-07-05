@@ -396,8 +396,8 @@ int Response::handleTarget() {
 }
 
 bool Response::reqError() {
-  if (request.errorCode()) {
-    code = request.errorCode();
+  if (request.errorCodes()) {
+    code = request.errorCodes();
     return (1);
   }
   return (0);

@@ -130,7 +130,7 @@ void ManagerServ::sendResponse(const int &i, Client &c) {
     closeConnection(i);
   } else if (bytesSent == 0 || (size_t)bytesSent == response.length()) {
     LogService::printLog(WHITE, SUCCESS, "Status<%d>", c.response.getCode());
-    if (c.request.keepAlive() == false || c.request.errorCode() || c.response.getCgiState()) {
+    if (c.request.keepAlive() == false || c.request.errorCodes() || c.response.getCgiState()) {
       LogService::printLog(YELLOW, SUCCESS, "Connection with client %d has been terminated", i);
       closeConnection(i);
     } else {
@@ -178,9 +178,9 @@ void ManagerServ::readAndProcessRequest(const int &i, Client &client) {
     memset(buffer, 0, sizeof(buffer));
   }
 
-  if (client.request.isParsingDone() || client.request.errorCode()) {
+  if (client.request.isParsingDone() || client.request.errorCodes()) {
     assignServer(client);
-    if (client.request.errorCode() != 501)
+    if (client.request.errorCodes() != 501)
       LogService::printLog(BLUE, SUCCESS, "<%s> \"%s\"", client.request.getMethodStr().c_str(), client.request.getPath().c_str());
     client.buildResponse();
     if (client.response.getCgiState()) {
