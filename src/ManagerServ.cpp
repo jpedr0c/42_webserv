@@ -174,11 +174,11 @@ void ManagerServ::readAndProcessRequest(const int &i, Client &client) {
   }
   if (bytesRead) {
     client.updateLastMessageTime();
-    client.request.feed(buffer, bytesRead);
+    client.request.parseHTTPRequestData(buffer, bytesRead);
     memset(buffer, 0, sizeof(buffer));
   }
 
-  if (client.request.parsingCompleted() || client.request.errorCode()) {
+  if (client.request.isParsingDone() || client.request.errorCode()) {
     assignServer(client);
     LogService::printLog(BLUE_BOLD, SUCCESS, "<%s> \"%s\"", client.request.getMethodStr().c_str(), client.request.getPath().c_str());
     client.buildResponse();

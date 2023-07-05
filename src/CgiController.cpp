@@ -114,7 +114,7 @@ void CgiController::initEnvCgi(Request &req, const std::vector<Location>::iterat
       cgiPath.insert(0, tmp);
   }
 
-  if (req.getMethod() == POST) {
+  if (req.getHttpMethod() == POST) {
     setContentLength(req.getBody().length());
     setContentType(req.getHeader("content-type"));
   }

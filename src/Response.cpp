@@ -215,7 +215,7 @@ bool Response::isValidFileType(std::string &path) {
 }
 
 bool Response::isFileAllowed(Request &request, std::string &locationKey) {
-  if (isAllowedMethod(request.getMethod(), *serv.getLocationKey(locationKey), code))
+  if (isAllowedMethod(request.getHttpMethod(), *serv.getLocationKey(locationKey), code))
     return false;
   return true;
 }
@@ -267,7 +267,7 @@ static void getLocationMatch(std::string &path, std::vector<Location> locations,
 }
 
 bool Response::isMethodNotAllowed(Location &location) {
-  return isAllowedMethod(request.getMethod(), location, code);
+  return isAllowedMethod(request.getHttpMethod(), location, code);
 }
 
 bool Response::isRequestBodySizeExceeded(const std::string &body, const Location &location) {
@@ -409,7 +409,7 @@ void Response::setServerDefaultErrorPages() {
 
 void Response::buildErrorBody() {
   if (!serv.getErrorPages().count(code) || serv.getErrorPages().at(code).empty() ||
-      request.getMethod() == DELETE || request.getMethod() == POST) {
+      request.getHttpMethod() == DELETE || request.getHttpMethod() == POST) {
     setServerDefaultErrorPages();
   } else {
     if (code >= 400 && code < 500) {
@@ -508,7 +508,7 @@ void Response::buildResponse() {
   }
   setStatusLine();
   setHeaders();
-  if (request.getMethod() == GET || code != 200)
+  if (request.getHttpMethod() == GET || code != 200)
     responseContent.append(responseBody);
 }
 
@@ -555,7 +555,7 @@ bool Response::handleGetMethod() {
 }
 
 bool Response::handlePostMethod() {
-  if (fileExists(targetFile) && request.getMethod() == POST) {
+  if (fileExists(targetFile) && request.getHttpMethod() == POST) {
     code = 204;
     return false;
   }
@@ -603,15 +603,15 @@ int Response::buildBody() {
     return 0;
   }
 
-  if (request.getMethod() == GET) {
+  if (request.getHttpMethod() == GET) {
     if (handleGetMethod()) {
       return 1;
     }
-  } else if (request.getMethod() == POST) {
+  } else if (request.getHttpMethod() == POST) {
     if (handlePostMethod()) {
       return 1;
     }
-  } else if (request.getMethod() == DELETE) {
+  } else if (request.getHttpMethod() == DELETE) {
     if (handleDeleteMethod()) {
       return 1;
     }

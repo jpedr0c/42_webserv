@@ -1,20 +1,19 @@
 #include "../inc/Request.hpp"
 
 Request::Request() {
-  _method_str[::GET] = "GET";
-  _method_str[::POST] = "POST";
-  _method_str[::DELETE] = "DELETE";
-  _method_str[::PUT] = "PUT";
-  _method_str[::HEAD] = "HEAD";
+  httpMethod_str[::GET] = "GET";
+  httpMethod_str[::POST] = "POST";
+  httpMethod_str[::DELETE] = "DELETE";
+  httpMethod_str[::PUT] = "PUT";
+  httpMethod_str[::HEAD] = "HEAD";
   path = "";
-  _query = "";
-  _fragment = "";
+  query = "";
   _body_str = "";
   _error_code = 0;
   _chunk_length = 0;
-  _method = NONE;
-  _method_index = 1;
-  _state = Request_Line;
+  httpMethod = NONE;
+  httpMethod_index = 1;
+  parsingStatus = Request_Line;
   _fields_done_flag = false;
   _body_flag = false;
   _body_done_flag = false;
@@ -28,7 +27,7 @@ Request::Request() {
 
 Request::~Request() {}
 
-bool checkUriPos(std::string path) {
+bool Request::isValidUriPosition(std::string path) {
   std::string tmp(path);
   char *res = strtok((char *)tmp.c_str(), "/");
   int pos = 0;
@@ -38,20 +37,20 @@ bool checkUriPos(std::string path) {
     else
       pos++;
     if (pos < 0)
-      return (1);
+      return (true);
     res = strtok(NULL, "/");
   }
-  return (0);
+  return (false);
 }
 
-bool allowedCharURI(uint8_t ch) {
+bool Request::isValidURIChar(uint8_t ch) {
   if ((ch >= '#' && ch <= ';') || (ch >= '?' && ch <= '[') || (ch >= 'a' && ch <= 'z') ||
       ch == '!' || ch == '=' || ch == ']' || ch == '_' || ch == '~')
     return (true);
   return (false);
 }
 
-bool isToken(uint8_t ch) {
+bool Request::isValidTokenChar(uint8_t ch) {
   if (ch == '!' || (ch >= '#' && ch <= '\'') || ch == '*' || ch == '+' || ch == '-' || ch == '.' ||
       (ch >= '0' && ch <= '9') || (ch >= 'A' && ch <= 'Z') || (ch >= '^' && ch <= '`') ||
       (ch >= 'a' && ch <= 'z') || ch == '|')
@@ -59,67 +58,67 @@ bool isToken(uint8_t ch) {
   return (false);
 }
 
-void trimStr(std::string &str) {
+void Request::removeLeadingTrailingWhitespace(std::string &str) {
   static const char *spaces = " \t";
   str.erase(0, str.find_first_not_of(spaces));
   str.erase(str.find_last_not_of(spaces) + 1);
 }
 
-void toLower(std::string &str) {
+void Request::convertToLowerCase(std::string &str) {
   for (size_t i = 0; i < str.length(); ++i)
     str[i] = std::tolower(str[i]);
 }
 
-void Request::feed(char *data, size_t size) {
+void Request::parseHTTPRequestData(char *data, size_t size) {
   u_int8_t character;
   static std::stringstream s;
 
   for (size_t i = 0; i < size; ++i) {
     character = data[i];
-    switch (_state) {
+    switch (parsingStatus) {
       case Request_Line: {
         if (character == 'G')
-          _method = GET;
+          httpMethod = GET;
         else if (character == 'P') {
-          _state = Request_Line_Post_Put;
+          parsingStatus = Request_Line_Post_Put;
           break;
         } else if (character == 'D')
-          _method = DELETE;
+          httpMethod = DELETE;
         else if (character == 'H')
-          _method = HEAD;
+          httpMethod = HEAD;
         else {
           _error_code = 501;
           std::cout << "Method Error Request_Line and Character is = " << character << std::endl;
           return;
         }
-        _state = Request_Line_Method;
+        parsingStatus = Request_Line_Method;
         break;
       }
       case Request_Line_Post_Put: {
         if (character == 'O')
-          _method = POST;
+          httpMethod = POST;
         else if (character == 'U')
-          _method = PUT;
+          httpMethod = PUT;
         else {
           _error_code = 501;
           std::cout << "Method Error Request_Line and Character is = " << character << std::endl;
           return;
         }
-        _method_index++;
-        _state = Request_Line_Method;
+        httpMethod_index++;
+        parsingStatus = Request_Line_Method;
         break;
       }
       case Request_Line_Method: {
-        if (character == _method_str[_method][_method_index])
-          _method_index++;
+        if (character == httpMethod_str[httpMethod][httpMethod_index])
+          httpMethod_index++;
         else {
           _error_code = 501;
           std::cout << "Method Error Request_Line and Character is = " << character << std::endl;
           return;
         }
 
-        if ((size_t)_method_index == _method_str[_method].length())
-          _state = Request_Line_First_Space;
+        if ((size_t)httpMethod_index == httpMethod_str[httpMethod].length())
+          parsingStatus = Request_Line_First_Space;
         break;
       }
       case Request_Line_First_Space: {
@@ -128,12 +127,12 @@ void Request::feed(char *data, size_t size) {
           std::cout << "Bad Character (Request_Line_First_Space)" << std::endl;
           return;
         }
-        _state = Request_Line_URI_Path_Slash;
+        parsingStatus = Request_Line_URI_Path_Slash;
         continue;
       }
       case Request_Line_URI_Path_Slash: {
         if (character == '/') {
-          _state = Request_Line_URI_Path;
+          parsingStatus = Request_Line_URI_Path;
           _storage.clear();
         } else {
           _error_code = 400;
@@ -144,21 +143,21 @@ void Request::feed(char *data, size_t size) {
       }
       case Request_Line_URI_Path: {
         if (character == ' ') {
-          _state = Request_Line_Ver;
+          parsingStatus = Request_Line_Ver;
           path.append(_storage);
           _storage.clear();
           continue;
         } else if (character == '?') {
-          _state = Request_Line_URI_Query;
+          parsingStatus = Request_Line_URI_Query;
           path.append(_storage);
           _storage.clear();
           continue;
         } else if (character == '#') {
-          _state = Request_Line_URI_Fragment;
+          parsingStatus = Request_Line_URI_Fragment;
           path.append(_storage);
           _storage.clear();
           continue;
-        } else if (!allowedCharURI(character)) {
+        } else if (!isValidURIChar(character)) {
           _error_code = 400;
           std::cout << "Bad Character (Request_Line_URI_Path)" << std::endl;
           return;
@@ -171,16 +170,16 @@ void Request::feed(char *data, size_t size) {
       }
       case Request_Line_URI_Query: {
         if (character == ' ') {
-          _state = Request_Line_Ver;
-          _query.append(_storage);
+          parsingStatus = Request_Line_Ver;
+          query.append(_storage);
           _storage.clear();
           continue;
         } else if (character == '#') {
-          _state = Request_Line_URI_Fragment;
-          _query.append(_storage);
+          parsingStatus = Request_Line_URI_Fragment;
+          query.append(_storage);
           _storage.clear();
           continue;
-        } else if (!allowedCharURI(character)) {
+        } else if (!isValidURIChar(character)) {
           _error_code = 400;
           std::cout << "Bad Character (Request_Line_URI_Query)" << std::endl;
           return;
@@ -193,11 +192,10 @@ void Request::feed(char *data, size_t size) {
       }
       case Request_Line_URI_Fragment: {
         if (character == ' ') {
-          _state = Request_Line_Ver;
-          _fragment.append(_storage);
+          parsingStatus = Request_Line_Ver;
           _storage.clear();
           continue;
-        } else if (!allowedCharURI(character)) {
+        } else if (!isValidURIChar(character)) {
           _error_code = 400;
           std::cout << "Bad Character (Request_Line_URI_Fragment)" << std::endl;
           return;
@@ -209,7 +207,7 @@ void Request::feed(char *data, size_t size) {
         break;
       }
       case Request_Line_Ver: {
-        if (checkUriPos(path)) {
+        if (isValidUriPosition(path)) {
           _error_code = 400;
           std::cout << "Request URI ERROR: goes before root !!" << std::endl;
           return;
@@ -219,7 +217,7 @@ void Request::feed(char *data, size_t size) {
           std::cout << "Bad Character (Request_Line_Ver)" << std::endl;
           return;
         }
-        _state = Request_Line_HT;
+        parsingStatus = Request_Line_HT;
         break;
       }
       case Request_Line_HT: {
@@ -228,7 +226,7 @@ void Request::feed(char *data, size_t size) {
           std::cout << "Bad Character (Request_Line_HT)" << std::endl;
           return;
         }
-        _state = Request_Line_HTT;
+        parsingStatus = Request_Line_HTT;
         break;
       }
       case Request_Line_HTT: {
@@ -237,7 +235,7 @@ void Request::feed(char *data, size_t size) {
           std::cout << "Bad Character (Request_Line_HTT)" << std::endl;
           return;
         }
-        _state = Request_Line_HTTP;
+        parsingStatus = Request_Line_HTTP;
         break;
       }
       case Request_Line_HTTP: {
@@ -246,7 +244,7 @@ void Request::feed(char *data, size_t size) {
           std::cout << "Bad Character (Request_Line_HTTP)" << std::endl;
           return;
         }
-        _state = Request_Line_HTTP_Slash;
+        parsingStatus = Request_Line_HTTP_Slash;
         break;
       }
       case Request_Line_HTTP_Slash: {
@@ -255,7 +253,7 @@ void Request::feed(char *data, size_t size) {
           std::cout << "Bad Character (Request_Line_HTTP_Slash)" << std::endl;
           return;
         }
-        _state = Request_Line_Major;
+        parsingStatus = Request_Line_Major;
         break;
       }
       case Request_Line_Major: {
@@ -266,7 +264,7 @@ void Request::feed(char *data, size_t size) {
         }
         _ver_major = character;
 
-        _state = Request_Line_Dot;
+        parsingStatus = Request_Line_Dot;
         break;
       }
       case Request_Line_Dot: {
@@ -275,7 +273,7 @@ void Request::feed(char *data, size_t size) {
           std::cout << "Bad Character (Request_Line_Dot)" << std::endl;
           return;
         }
-        _state = Request_Line_Minor;
+        parsingStatus = Request_Line_Minor;
         break;
       }
       case Request_Line_Minor: {
@@ -285,7 +283,7 @@ void Request::feed(char *data, size_t size) {
           return;
         }
         _ver_minor = character;
-        _state = Request_Line_CR;
+        parsingStatus = Request_Line_CR;
         break;
       }
       case Request_Line_CR: {
@@ -294,7 +292,7 @@ void Request::feed(char *data, size_t size) {
           std::cout << "Bad Character (Request_Line_CR)" << std::endl;
           return;
         }
-        _state = Request_Line_LF;
+        parsingStatus = Request_Line_LF;
         break;
       }
       case Request_Line_LF: {
@@ -303,15 +301,15 @@ void Request::feed(char *data, size_t size) {
           std::cout << "Bad Character (Request_Line_LF)" << std::endl;
           return;
         }
-        _state = Field_Name_Start;
+        parsingStatus = Field_Name_Start;
         _storage.clear();
         continue;
       }
       case Field_Name_Start: {
         if (character == '\r')
-          _state = Fields_End;
-        else if (isToken(character))
-          _state = Field_Name;
+          parsingStatus = Fields_End;
+        else if (isValidTokenChar(character))
+          parsingStatus = Field_Name;
         else {
           _error_code = 400;
           std::cout << "Bad Character (Field_Name_Start)" << std::endl;
@@ -326,12 +324,12 @@ void Request::feed(char *data, size_t size) {
           _handle_headers();
           if (_body_flag == 1) {
             if (_chunked_flag == true)
-              _state = Chunked_Length_Begin;
+              parsingStatus = Chunked_Length_Begin;
             else {
-              _state = Message_Body;
+              parsingStatus = Message_Body;
             }
           } else {
-            _state = Parsing_Done;
+            parsingStatus = Parsing_Done;
           }
           continue;
         } else {
@@ -345,9 +343,9 @@ void Request::feed(char *data, size_t size) {
         if (character == ':') {
           _key_storage = _storage;
           _storage.clear();
-          _state = Field_Value;
+          parsingStatus = Field_Value;
           continue;
-        } else if (!isToken(character)) {
+        } else if (!isValidTokenChar(character)) {
           _error_code = 400;
           std::cout << "Bad Character (Field_Name)" << std::endl;
           return;
@@ -359,14 +357,14 @@ void Request::feed(char *data, size_t size) {
           setHeader(_key_storage, _storage);
           _key_storage.clear();
           _storage.clear();
-          _state = Field_Value_End;
+          parsingStatus = Field_Value_End;
           continue;
         }
         break;
       }
       case Field_Value_End: {
         if (character == '\n') {
-          _state = Field_Name_Start;
+          parsingStatus = Field_Name_Start;
           continue;
         } else {
           _error_code = 400;
@@ -386,9 +384,9 @@ void Request::feed(char *data, size_t size) {
         s << character;
         s >> std::hex >> _chunk_length;
         if (_chunk_length == 0)
-          _state = Chunked_Length_CR;
+          parsingStatus = Chunked_Length_CR;
         else
-          _state = Chunked_Length;
+          parsingStatus = Chunked_Length;
         continue;
       }
       case Chunked_Length: {
@@ -401,14 +399,14 @@ void Request::feed(char *data, size_t size) {
           _chunk_length *= 16;
           _chunk_length += temp_len;
         } else if (character == '\r')
-          _state = Chunked_Length_LF;
+          parsingStatus = Chunked_Length_LF;
         else
-          _state = Chunked_Ignore;
+          parsingStatus = Chunked_Ignore;
         continue;
       }
       case Chunked_Length_CR: {
         if (character == '\r')
-          _state = Chunked_Length_LF;
+          parsingStatus = Chunked_Length_LF;
         else {
           _error_code = 400;
           std::cout << "Bad Character (Chunked_Length_CR)" << std::endl;
@@ -419,9 +417,9 @@ void Request::feed(char *data, size_t size) {
       case Chunked_Length_LF: {
         if (character == '\n') {
           if (_chunk_length == 0)
-            _state = Chunked_End_CR;
+            parsingStatus = Chunked_End_CR;
           else
-            _state = Chunked_Data;
+            parsingStatus = Chunked_Data;
         } else {
           _error_code = 400;
           std::cout << "Bad Character (Chunked_Length_LF)" << std::endl;
@@ -431,19 +429,19 @@ void Request::feed(char *data, size_t size) {
       }
       case Chunked_Ignore: {
         if (character == '\r')
-          _state = Chunked_Length_LF;
+          parsingStatus = Chunked_Length_LF;
         continue;
       }
       case Chunked_Data: {
         _body.push_back(character);
         --_chunk_length;
         if (_chunk_length == 0)
-          _state = Chunked_Data_CR;
+          parsingStatus = Chunked_Data_CR;
         continue;
       }
       case Chunked_Data_CR: {
         if (character == '\r')
-          _state = Chunked_Data_LF;
+          parsingStatus = Chunked_Data_LF;
         else {
           _error_code = 400;
           std::cout << "Bad Character (Chunked_Data_CR)" << std::endl;
@@ -453,7 +451,7 @@ void Request::feed(char *data, size_t size) {
       }
       case Chunked_Data_LF: {
         if (character == '\n')
-          _state = Chunked_Length_Begin;
+          parsingStatus = Chunked_Length_Begin;
         else {
           _error_code = 400;
           std::cout << "Bad Character (Chunked_Data_LF)" << std::endl;
@@ -467,7 +465,7 @@ void Request::feed(char *data, size_t size) {
           std::cout << "Bad Character (Chunked_End_CR)" << std::endl;
           return;
         }
-        _state = Chunked_End_LF;
+        parsingStatus = Chunked_End_LF;
         continue;
       }
       case Chunked_End_LF: {
@@ -477,7 +475,7 @@ void Request::feed(char *data, size_t size) {
           return;
         }
         _body_done_flag = true;
-        _state = Parsing_Done;
+        parsingStatus = Parsing_Done;
         continue;
       }
       case Message_Body: {
@@ -485,7 +483,7 @@ void Request::feed(char *data, size_t size) {
           _body.push_back(character);
         if (_body.size() == _body_length) {
           _body_done_flag = true;
-          _state = Parsing_Done;
+          parsingStatus = Parsing_Done;
         }
         break;
       }
@@ -495,17 +493,17 @@ void Request::feed(char *data, size_t size) {
     }
     _storage += character;
   }
-  if (_state == Parsing_Done) {
+  if (parsingStatus == Parsing_Done) {
     _body_str.append((char *)_body.data(), _body.size());
   }
 }
 
-bool Request::parsingCompleted() {
-  return (_state == Parsing_Done);
+bool Request::isParsingDone() {
+  return (parsingStatus == Parsing_Done);
 }
 
-HttpMethod &Request::getMethod() {
-  return (_method);
+HttpMethod &Request::getHttpMethod() {
+  return (httpMethod);
 }
 
 std::string &Request::getPath() {
@@ -513,23 +511,19 @@ std::string &Request::getPath() {
 }
 
 std::string &Request::getQuery() {
-  return (_query);
-}
-
-std::string &Request::getFragment() {
-  return (_fragment);
+  return (query);
 }
 
 std::string Request::getHeader(std::string const &name) {
-  return (_request_headers[name]);
+  return (headerList[name]);
 }
 
 const std::map<std::string, std::string> &Request::getHeaders() const {
-  return (this->_request_headers);
+  return (this->headerList);
 }
 
 std::string Request::getMethodStr() {
-  return (_method_str[_method]);
+  return (httpMethod_str[httpMethod]);
 }
 
 std::string &Request::getBody() {
@@ -554,58 +548,37 @@ void Request::setBody(std::string body) {
   _body_str = body;
 }
 
-void Request::setMethod(HttpMethod &method) {
-  _method = method;
-}
-
 void Request::setHeader(std::string &name, std::string &value) {
-  trimStr(value);
-  toLower(name);
-  _request_headers[name] = value;
+  removeLeadingTrailingWhitespace(value);
+  convertToLowerCase(name);
+  headerList[name] = value;
 }
 
 void Request::setMaxBodySize(size_t size) {
-  _max_body_size = size;
-}
-
-void Request::printMessage() {
-  std::cout << _method_str[_method] + " " + path + "?" + _query + "#" + _fragment + " " + "HTTP/" << _ver_major << "." << _ver_minor << std::endl;
-
-  for (std::map<std::string, std::string>::iterator it = _request_headers.begin();
-       it != _request_headers.end(); ++it) {
-    std::cout << it->first + ":" + it->second << std::endl;
-  }
-  for (std::vector<u_int8_t>::iterator it = _body.begin(); it != _body.end(); ++it) {
-    std::cout << *it;
-  }
-  std::cout << std::endl
-            << "END OF BODY" << std::endl;
-
-  std::cout << "BODY FLAG =" << _body_flag << "  _BOD_done_flag= " << _body_done_flag << "FEIDLS FLAG = " << _fields_done_flag
-            << std::endl;
+  maxBodySize = size;
 }
 
 void Request::_handle_headers() {
   std::stringstream ss;
 
-  if (_request_headers.count("content-length")) {
+  if (headerList.count("content-length")) {
     _body_flag = true;
-    ss << _request_headers["content-length"];
+    ss << headerList["content-length"];
     ss >> _body_length;
   }
-  if (_request_headers.count("transfer-encoding")) {
-    if (_request_headers["transfer-encoding"].find_first_of("chunked") != std::string::npos)
+  if (headerList.count("transfer-encoding")) {
+    if (headerList["transfer-encoding"].find_first_of("chunked") != std::string::npos)
       _chunked_flag = true;
     _body_flag = true;
   }
-  if (_request_headers.count("host")) {
-    size_t pos = _request_headers["host"].find_first_of(':');
-    _server_name = _request_headers["host"].substr(0, pos);
+  if (headerList.count("host")) {
+    size_t pos = headerList["host"].find_first_of(':');
+    _server_name = headerList["host"].substr(0, pos);
   }
-  if (_request_headers.count("content-type") && _request_headers["content-type"].find("multipart/form-data") != std::string::npos) {
-    size_t pos = _request_headers["content-type"].find("boundary=", 0);
+  if (headerList.count("content-type") && headerList["content-type"].find("multipart/form-data") != std::string::npos) {
+    size_t pos = headerList["content-type"].find("boundary=", 0);
     if (pos != std::string::npos)
-      this->_boundary = _request_headers["content-type"].substr(pos + 9, _request_headers["content-type"].size());
+      this->_boundary = headerList["content-type"].substr(pos + 9, headerList["content-type"].size());
     this->_multiform_flag = true;
   }
 }
@@ -617,17 +590,16 @@ short Request::errorCode() {
 void Request::clear() {
   path.clear();
   _error_code = 0;
-  _query.clear();
-  _fragment.clear();
-  _method = NONE;
-  _method_index = 1;
-  _state = Request_Line;
+  query.clear();
+  httpMethod = NONE;
+  httpMethod_index = 1;
+  parsingStatus = Request_Line;
   _body_length = 0;
   _chunk_length = 0x0;
   _storage.clear();
   _body_str = "";
   _key_storage.clear();
-  _request_headers.clear();
+  headerList.clear();
   _server_name.clear();
   _body.clear();
   _boundary.clear();
@@ -640,13 +612,9 @@ void Request::clear() {
 }
 
 bool Request::keepAlive() {
-  if (_request_headers.count("connection")) {
-    if (_request_headers["connection"].find("close", 0) != std::string::npos)
+  if (headerList.count("connection")) {
+    if (headerList["connection"].find("close", 0) != std::string::npos)
       return (false);
   }
   return (true);
-}
-
-void Request::cutReqBody(int bytes) {
-  _body_str = _body_str.substr(bytes);
 }
