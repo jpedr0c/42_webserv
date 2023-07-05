@@ -79,7 +79,7 @@ class Request {
   void clear();
   short errorCodes();
   void setErrorCode(short status);
-  bool keepAlive();
+  bool isConnectionKeepAlive();
 
  private:
   std::string path;
@@ -108,7 +108,7 @@ class Request {
   bool chunkedFlag;
   bool multiformFlag;
 
-  void _handle_headers();
+  void extractRequestHeaders();
 };
 
 #endif

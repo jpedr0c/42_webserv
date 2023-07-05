@@ -73,7 +73,7 @@ void Server::setHost(std::string param) {
   if (isValidHost(param))
     this->host = inet_addr(param.data());
   else
-    throw ErrorException("Wrong syntax: host");
+    throw Error("Wrong syntax: host");
 }
 
 void Server::setRoot(std::string root) {
@@ -90,7 +90,7 @@ void Server::setRoot(std::string root) {
   if (ConfigFile::getTypePath(full_root) == 2)
     this->root = full_root;
   else
-    throw ErrorException("Wrong syntax: root");
+    throw Error("Wrong syntax: root");
 }
 
 void Server::setPort(std::string param) {
@@ -102,12 +102,12 @@ void Server::setPort(std::string param) {
     if (std::isdigit(param[i]))
       isDigits = 1;
     else
-      throw ErrorException("Wrong syntax: port");
+      throw Error("Wrong syntax: port");
   }
   if (isDigits) {
     port = std::atoi((param.c_str()));
     if (port < 1 || port > 65636)
-      throw ErrorException("Wrong syntax: port");
+      throw Error("Wrong syntax: port");
     this->port = (uint16_t)port;
   }
 }
@@ -133,7 +133,7 @@ void Server::setIndex(std::string index) {
 void Server::setAutoindex(std::string autoindex) {
   checkToken(autoindex);
   if (autoindex != "on" && autoindex != "off")
-    throw ErrorException("Wrong syntax: autoindex");
+    throw Error("Wrong syntax: autoindex");
   if (autoindex == "on")
     this->autoIndex = true;
 }
@@ -205,19 +205,19 @@ void Server::setErrorPages(std::vector<std::string>& param) {
   if (param.empty())
     return;
   if (param.size() % 2 != 0)
-    throw ErrorException("Error page initialization failed");
+    throw Error("Error page initialization failed");
 
   for (size_t i = 0; i < param.size() - 1; i += 2) {
     std::string codeStr = param[i];
     std::string path = param[i + 1];
 
     if (codeStr.size() != 3 || !std::isdigit(codeStr[0]) || !std::isdigit(codeStr[1]) || !std::isdigit(codeStr[2]))
-      throw ErrorException("Error code is invalid");
+      throw Error("Error code is invalid");
 
     short codeError = static_cast<short>(std::atoi(codeStr.c_str()));
 
     if (statusCodeString(codeError) == "Undefined" || codeError < 400)
-      throw ErrorException("Incorrect error code: " + codeStr);
+      throw Error("Incorrect error code: " + codeStr);
 
     checkToken(path);
 
@@ -225,10 +225,10 @@ void Server::setErrorPages(std::vector<std::string>& param) {
     int type = ConfigFile::getTypePath(fullPath);
     if (type != 2) {
       if (ConfigFile::getTypePath(fullPath) != 1)
-        throw ErrorException("Incorrect path for error page file: " + fullPath);
+        throw Error("Incorrect path for error page file: " + fullPath);
 
       if (ConfigFile::checkAccessFile(fullPath, 0) == -1 || ConfigFile::checkAccessFile(fullPath, 4) == -1)
-        throw ErrorException("Error page file: " + fullPath + " is not accessible");
+        throw Error("Error page file: " + fullPath + " is not accessible");
     }
 
     this->errorPages[codeError] = path;
@@ -239,7 +239,7 @@ void Server::setLocation(std::string path, std::vector<std::string> param) {
   if (param.empty())
     return;
   if (param.size() % 2 != 0)
-    throw ErrorException("Error page initialization failed");
+    throw Error("Error page initialization failed");
 
   Location newLocation;
   std::vector<std::string> methods;
@@ -269,7 +269,7 @@ void Server::setLocation(std::string path, std::vector<std::string> param) {
     } else if (param[i] == "client_max_body_size" && (i + 1) < param.size()) {
       handleMaxBodySize(param, i, newLocation, flagMaxSize);
     } else if (i < param.size()) {
-      throw ErrorException("param in a location is invalid");
+      throw Error("param in a location is invalid");
     }
   }
 
@@ -283,7 +283,7 @@ void Server::setLocation(std::string path, std::vector<std::string> param) {
 
 void Server::handleRootLocation(std::vector<std::string>& param, size_t& i, Location& newLocation) {
   if (!newLocation.getRootLocation().empty())
-    throw ErrorException("Root of location is duplicated");
+    throw Error("Root of location is duplicated");
   checkToken(param[++i]);
   std::string rootLocation = ConfigFile::getTypePath(param[i]) == 2 ? param[i] : (this->root + param[i]);
   newLocation.setRootLocation(rootLocation);
@@ -291,7 +291,7 @@ void Server::handleRootLocation(std::vector<std::string>& param, size_t& i, Loca
 
 void Server::handleAllowMethods(std::vector<std::string>& param, size_t& i, Location& newLocation, bool& flagMethods) {
   if (flagMethods)
-    throw ErrorException("Allow_methods of location is duplicated");
+    throw Error("Allow_methods of location is duplicated");
   std::vector<std::string> methods;
   while (++i < param.size()) {
     if (param[i].find(";") != std::string::npos) {
@@ -301,7 +301,7 @@ void Server::handleAllowMethods(std::vector<std::string>& param, size_t& i, Loca
     } else {
       methods.push_back(param[i]);
       if (i + 1 >= param.size())
-        throw ErrorException("Token is invalid");
+        throw Error("Token is invalid");
     }
   }
   newLocation.setMethods(methods);
@@ -310,9 +310,9 @@ void Server::handleAllowMethods(std::vector<std::string>& param, size_t& i, Loca
 
 void Server::handleAutoindex(std::vector<std::string>& param, size_t& i, const std::string& path, Location& newLocation, bool& flagAutoIndex) {
   if (path == "/cgi")
-    throw ErrorException("param autoindex not allowed for CGI");
+    throw Error("param autoindex not allowed for CGI");
   if (flagAutoIndex)
-    throw ErrorException("Autoindex of location is duplicated");
+    throw Error("Autoindex of location is duplicated");
   checkToken(param[++i]);
   newLocation.setAutoindex(param[i]);
   flagAutoIndex = true;
@@ -320,25 +320,25 @@ void Server::handleAutoindex(std::vector<std::string>& param, size_t& i, const s
 
 void Server::handleIndexLocation(std::vector<std::string>& param, size_t& i, Location& newLocation) {
   if (!newLocation.getIndexLocation().empty())
-    throw ErrorException("Index of location is duplicated");
+    throw Error("Index of location is duplicated");
   checkToken(param[++i]);
   newLocation.setIndexLocation(param[i]);
 }
 
 void Server::handleReturn(std::vector<std::string>& param, size_t& i, const std::string& path, Location& newLocation) {
   if (path == "/cgi")
-    throw ErrorException("param return not allowed for CGI");
+    throw Error("param return not allowed for CGI");
   if (!newLocation.getReturn().empty())
-    throw ErrorException("Return of location is duplicated");
+    throw Error("Return of location is duplicated");
   checkToken(param[++i]);
   newLocation.setReturn(param[i]);
 }
 
 void Server::handleAlias(std::vector<std::string>& param, size_t& i, const std::string& path, Location& newLocation) {
   if (path == "/cgi")
-    throw ErrorException("param alias not allowed for CGI");
+    throw Error("param alias not allowed for CGI");
   if (!newLocation.getAlias().empty())
-    throw ErrorException("Alias of location is duplicated");
+    throw Error("Alias of location is duplicated");
   checkToken(param[++i]);
   newLocation.setAlias(param[i]);
 }
@@ -353,7 +353,7 @@ void Server::handleCgiExtension(std::vector<std::string>& param, size_t& i, Loca
     } else {
       extension.push_back(param[i]);
       if (i + 1 >= param.size())
-        throw ErrorException("Token is invalid");
+        throw Error("Token is invalid");
     }
   }
   newLocation.setCgiExtension(extension);
@@ -369,17 +369,17 @@ void Server::handleCgiPath(std::vector<std::string>& param, size_t& i, Location&
     } else {
       path.push_back(param[i]);
       if (i + 1 >= param.size())
-        throw ErrorException("Token is invalid");
+        throw Error("Token is invalid");
     }
     if (param[i].find("/python") == std::string::npos)
-      throw ErrorException("cgi_path is invalid");
+      throw Error("cgi_path is invalid");
   }
   newLocation.setCgiPath(path);
 }
 
 void Server::handleMaxBodySize(std::vector<std::string>& param, size_t& i, Location& newLocation, bool& flagMaxSize) {
   if (flagMaxSize)
-    throw ErrorException("Max_body_size of location is duplicated");
+    throw Error("Max_body_size of location is duplicated");
   checkToken(param[++i]);
   newLocation.setMaxBodySize(param[i]);
   flagMaxSize = true;
@@ -394,13 +394,13 @@ void Server::handleLocationDefaults(Location& newLocation, bool flagMaxSize) {
 
 void Server::handleLocationValidation(int valid) {
   if (valid == 1)
-    throw ErrorException("Failed CGI validation");
+    throw Error("Failed CGI validation");
   else if (valid == 2)
-    throw ErrorException("Failed path in location validation");
+    throw Error("Failed path in location validation");
   else if (valid == 3)
-    throw ErrorException("Failed redirection file in location validation");
+    throw Error("Failed redirection file in location validation");
   else if (valid == 4)
-    throw ErrorException("Failed alias file in location validation");
+    throw Error("Failed alias file in location validation");
 }
 
 void Server::setFd(int fd) {
@@ -550,7 +550,7 @@ int Server::getFd() {
 const std::string& Server::getPathErrorPage(short key) {
   std::map<short, std::string>::iterator it = this->errorPages.find(key);
   if (it == this->errorPages.end())
-    throw ErrorException("Error_page does not exist");
+    throw Error("Error_page does not exist");
   return (it->second);
 }
 
@@ -560,13 +560,13 @@ const std::vector<Location>::iterator Server::getLocationKey(std::string key) {
     if (it->getPath() == key)
       return (it);
   }
-  throw ErrorException("Error: path to location not found");
+  throw Error("Error: path to location not found");
 }
 
 void Server::checkToken(std::string& param) {
   size_t pos = param.rfind(';');
   if (pos != param.size() - 1)
-    throw ErrorException("Token is invalid");
+    throw Error("Token is invalid");
   param.erase(pos);
 }
 

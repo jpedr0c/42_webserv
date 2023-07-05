@@ -130,7 +130,7 @@ void ManagerServ::sendResponse(const int &i, Client &c) {
     closeConnection(i);
   } else if (bytesSent == 0 || (size_t)bytesSent == response.length()) {
     LogService::printLog(WHITE, SUCCESS, "Status<%d>", c.response.getCode());
-    if (c.request.keepAlive() == false || c.request.errorCodes() || c.response.getCgiState()) {
+    if (c.request.isConnectionKeepAlive() == false || c.request.errorCodes() || c.response.getCgiState()) {
       LogService::printLog(YELLOW, SUCCESS, "Connection with client %d has been terminated", i);
       closeConnection(i);
     } else {
