@@ -6,7 +6,7 @@ SRC_DIR = src/
 OBJ_DIR = obj/
 RM = rm -rf
 CPP = c++
-CPPFLAGS = -Wall -Wextra -Werror -std=c++98 -g3
+CPPFLAGS = -Wall -Wextra -Werror -std=c++98
 
 # Colors
 SET_COLOR = \033[0m
