@@ -11,7 +11,7 @@ Request::Request() {
   chunkLength = 0;
   httpMethod = NONE;
   httpMethod_index = 1;
-  parsingStatus = Request_Line;
+  parsingStatus = REQUEST_LINE;
   fieldsDoneFlag = false;
   bodyFlag = false;
   bodyDoneFlag = false;
@@ -74,11 +74,11 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
   for (size_t i = 0; i < size; ++i) {
     character = data[i];
     switch (parsingStatus) {
-      case Request_Line: {
+      case REQUEST_LINE: {
         if (character == 'G')
           httpMethod = GET;
         else if (character == 'P') {
-          parsingStatus = Request_Line_Post_Put;
+          parsingStatus = REQUEST_LINE_POST_PUT;
           break;
         } else if (character == 'D')
           httpMethod = DELETE;
@@ -92,10 +92,10 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
           LogService::printLog(ORANGE, SUCCESS, "Invalid character \"%s\"", character);
           return;
         }
-        parsingStatus = Request_Line_Method;
+        parsingStatus = REQUEST_LINE_METHOD;
         break;
       }
-      case Request_Line_Post_Put: {
+      case REQUEST_LINE_POST_PUT: {
         if (character == 'O')
           httpMethod = POST;
         else if (character == 'U') {
@@ -109,10 +109,10 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
           return;
         }
         httpMethod_index++;
-        parsingStatus = Request_Line_Method;
+        parsingStatus = REQUEST_LINE_METHOD;
         break;
       }
-      case Request_Line_Method: {
+      case REQUEST_LINE_METHOD: {
         if (character == httpMethodStr[httpMethod][httpMethod_index])
           httpMethod_index++;
         else {
@@ -121,20 +121,20 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
         }
 
         if ((size_t)httpMethod_index == httpMethodStr[httpMethod].length())
-          parsingStatus = Request_Line_First_Space;
+          parsingStatus = REQUEST_LINE_FIRST_SPACE;
         break;
       }
-      case Request_Line_First_Space: {
+      case REQUEST_LINE_FIRST_SPACE: {
         if (character != ' ') {
           LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
-        parsingStatus = Request_Line_URI_Path_Slash;
+        parsingStatus = REQUEST_LINE_URI_PATH_SLASH;
         continue;
       }
-      case Request_Line_URI_Path_Slash: {
+      case REQUEST_LINE_URI_PATH_SLASH: {
         if (character == '/') {
-          parsingStatus = Request_Line_URI_Path;
+          parsingStatus = REQUEST_LINE_URI_PATH;
           storage.clear();
         } else {
           LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
@@ -142,19 +142,19 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
         }
         break;
       }
-      case Request_Line_URI_Path: {
+      case REQUEST_LINE_URI_PATH: {
         if (character == ' ') {
-          parsingStatus = Request_Line_Ver;
+          parsingStatus = REQUEST_LINE_VER;
           path.append(storage);
           storage.clear();
           continue;
         } else if (character == '?') {
-          parsingStatus = Request_Line_URI_Query;
+          parsingStatus = REQUEST_LINE_URI_QUERY;
           path.append(storage);
           storage.clear();
           continue;
         } else if (character == '#') {
-          parsingStatus = Request_Line_URI_Fragment;
+          parsingStatus = REQUEST_LINE_URI_FRAGMENT;
           path.append(storage);
           storage.clear();
           continue;
@@ -167,14 +167,14 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
         }
         break;
       }
-      case Request_Line_URI_Query: {
+      case REQUEST_LINE_URI_QUERY: {
         if (character == ' ') {
-          parsingStatus = Request_Line_Ver;
+          parsingStatus = REQUEST_LINE_VER;
           query.append(storage);
           storage.clear();
           continue;
         } else if (character == '#') {
-          parsingStatus = Request_Line_URI_Fragment;
+          parsingStatus = REQUEST_LINE_URI_FRAGMENT;
           query.append(storage);
           storage.clear();
           continue;
@@ -187,9 +187,9 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
         }
         break;
       }
-      case Request_Line_URI_Fragment: {
+      case REQUEST_LINE_URI_FRAGMENT: {
         if (character == ' ') {
-          parsingStatus = Request_Line_Ver;
+          parsingStatus = REQUEST_LINE_VER;
           storage.clear();
           continue;
         } else if (!isValidURIChar(character)) {
@@ -201,7 +201,7 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
         }
         break;
       }
-      case Request_Line_Ver: {
+      case REQUEST_LINE_VER: {
         if (isValidUriPosition(path)) {
           LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
@@ -210,109 +210,109 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
           LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
-        parsingStatus = Request_Line_HT;
+        parsingStatus = REQUEST_LINE_HT;
         break;
       }
-      case Request_Line_HT: {
+      case REQUEST_LINE_HT: {
         if (character != 'T') {
           LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
-        parsingStatus = Request_Line_HTT;
+        parsingStatus = REQUEST_LINE_HTT;
         break;
       }
-      case Request_Line_HTT: {
+      case REQUEST_LINE_HTT: {
         if (character != 'T') {
           LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
-        parsingStatus = Request_Line_HTTP;
+        parsingStatus = REQUEST_LINE_HTTP;
         break;
       }
-      case Request_Line_HTTP: {
+      case REQUEST_LINE_HTTP: {
         if (character != 'P') {
           LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
-        parsingStatus = Request_Line_HTTP_Slash;
+        parsingStatus = REQUEST_LINE_HTTP_SLASH;
         break;
       }
-      case Request_Line_HTTP_Slash: {
+      case REQUEST_LINE_HTTP_SLASH: {
         if (character != '/') {
           LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
-        parsingStatus = Request_Line_Major;
+        parsingStatus = REQUEST_LINE_MAJOR;
         break;
       }
-      case Request_Line_Major: {
+      case REQUEST_LINE_MAJOR: {
         if (!isdigit(character)) {
           LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         verMajor = character;
 
-        parsingStatus = Request_Line_Dot;
+        parsingStatus = REQUEST_LINE_DOT;
         break;
       }
-      case Request_Line_Dot: {
+      case REQUEST_LINE_DOT: {
         if (character != '.') {
           LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
-        parsingStatus = Request_Line_Minor;
+        parsingStatus = REQUEST_LINE_MINOR;
         break;
       }
-      case Request_Line_Minor: {
+      case REQUEST_LINE_MINOR: {
         if (!isdigit(character)) {
           LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         verMinor = character;
-        parsingStatus = Request_Line_CR;
+        parsingStatus = REQUEST_LINE_CR;
         break;
       }
-      case Request_Line_CR: {
+      case REQUEST_LINE_CR: {
         if (character != '\r') {
           LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
-        parsingStatus = Request_Line_LF;
+        parsingStatus = REQUEST_LINE_LF;
         break;
       }
-      case Request_Line_LF: {
+      case REQUEST_LINE_LF: {
         if (character != '\n') {
           LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
-        parsingStatus = Field_Name_Start;
+        parsingStatus = FIELD_NAME_START;
         storage.clear();
         continue;
       }
-      case Field_Name_Start: {
+      case FIELD_NAME_START: {
         if (character == '\r')
-          parsingStatus = Fields_End;
+          parsingStatus = FIELDS_END;
         else if (isValidTokenChar(character))
-          parsingStatus = Field_Name;
+          parsingStatus = FIELD_NAME;
         else {
           LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         break;
       }
-      case Fields_End: {
+      case FIELDS_END: {
         if (character == '\n') {
           storage.clear();
           fieldsDoneFlag = true;
           _handle_headers();
           if (bodyFlag == 1) {
             if (chunkedFlag == true)
-              parsingStatus = Chunked_Length_Begin;
+              parsingStatus = CHUNKED_LENGTH_BEGIN;
             else {
-              parsingStatus = Message_Body;
+              parsingStatus = MESSAGE_BODY;
             }
           } else {
-            parsingStatus = Parsing_Done;
+            parsingStatus = PARSING_DONE;
           }
           continue;
         } else {
@@ -321,11 +321,11 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
         }
         break;
       }
-      case Field_Name: {
+      case FIELD_NAME: {
         if (character == ':') {
           keyStorage = storage;
           storage.clear();
-          parsingStatus = Field_Value;
+          parsingStatus = FIELD_VALUE;
           continue;
         } else if (!isValidTokenChar(character)) {
           LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
@@ -333,19 +333,19 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
         }
         break;
       }
-      case Field_Value: {
+      case FIELD_VALUE: {
         if (character == '\r') {
           setHeader(keyStorage, storage);
           keyStorage.clear();
           storage.clear();
-          parsingStatus = Field_Value_End;
+          parsingStatus = FIELD_VALUE_END;
           continue;
         }
         break;
       }
-      case Field_Value_End: {
+      case FIELD_VALUE_END: {
         if (character == '\n') {
-          parsingStatus = Field_Name_Start;
+          parsingStatus = FIELD_NAME_START;
           continue;
         } else {
           LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
@@ -353,7 +353,7 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
         }
         break;
       }
-      case Chunked_Length_Begin: {
+      case CHUNKED_LENGTH_BEGIN: {
         if (isxdigit(character) == 0) {
           LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
@@ -363,12 +363,12 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
         s << character;
         s >> std::hex >> chunkLength;
         if (chunkLength == 0)
-          parsingStatus = Chunked_Length_CR;
+          parsingStatus = CHUNKED_LENGTH_CR;
         else
-          parsingStatus = Chunked_Length;
+          parsingStatus = CHUNKED_LENGTH;
         continue;
       }
-      case Chunked_Length: {
+      case CHUNKED_LENGTH: {
         if (isxdigit(character) != 0) {
           int temp_len = 0;
           s.str("");
@@ -378,101 +378,101 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
           chunkLength *= 16;
           chunkLength += temp_len;
         } else if (character == '\r')
-          parsingStatus = Chunked_Length_LF;
+          parsingStatus = CHUNKED_END_LF;
         else
-          parsingStatus = Chunked_Ignore;
+          parsingStatus = CHUNKED_IGNORE;
         continue;
       }
-      case Chunked_Length_CR: {
+      case CHUNKED_LENGTH_CR: {
         if (character == '\r')
-          parsingStatus = Chunked_Length_LF;
+          parsingStatus = CHUNKED_END_LF;
         else {
           LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         continue;
       }
-      case Chunked_Length_LF: {
+      case CHUNKED_LENGTH_LF: {
         if (character == '\n') {
           if (chunkLength == 0)
-            parsingStatus = Chunked_End_CR;
+            parsingStatus = CHUNKED_END_CR;
           else
-            parsingStatus = Chunked_Data;
+            parsingStatus = CHUNKED_DATA;
         } else {
           LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         continue;
       }
-      case Chunked_Ignore: {
+      case CHUNKED_IGNORE: {
         if (character == '\r')
-          parsingStatus = Chunked_Length_LF;
+          parsingStatus = CHUNKED_END_LF;
         continue;
       }
-      case Chunked_Data: {
+      case CHUNKED_DATA: {
         body.push_back(character);
         --chunkLength;
         if (chunkLength == 0)
-          parsingStatus = Chunked_Data_CR;
+          parsingStatus = CHUNKED_DATA_CR;
         continue;
       }
-      case Chunked_Data_CR: {
+      case CHUNKED_DATA_CR: {
         if (character == '\r')
-          parsingStatus = Chunked_Data_LF;
+          parsingStatus = CHUNKED_DATA_LF;
         else {
           LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         continue;
       }
-      case Chunked_Data_LF: {
+      case CHUNKED_DATA_LF: {
         if (character == '\n')
-          parsingStatus = Chunked_Length_Begin;
+          parsingStatus = CHUNKED_LENGTH_BEGIN;
         else {
           LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         continue;
       }
-      case Chunked_End_CR: {
+      case CHUNKED_END_CR: {
         if (character != '\r') {
           LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
-        parsingStatus = Chunked_End_LF;
+        parsingStatus = CHUNKED_END_LF;
         continue;
       }
-      case Chunked_End_LF: {
+      case CHUNKED_END_LF: {
         if (character != '\n') {
           LogService::printErrorCodeLog(ORANGE, errorCode, 400, "Bad character \"%s\"", character);
           return;
         }
         bodyDoneFlag = true;
-        parsingStatus = Parsing_Done;
+        parsingStatus = PARSING_DONE;
         continue;
       }
-      case Message_Body: {
+      case MESSAGE_BODY: {
         if (body.size() < bodyLength)
           body.push_back(character);
         if (body.size() == bodyLength) {
           bodyDoneFlag = true;
-          parsingStatus = Parsing_Done;
+          parsingStatus = PARSING_DONE;
         }
         break;
       }
-      case Parsing_Done: {
+      case PARSING_DONE: {
         return;
       }
     }
     storage += character;
   }
-  if (parsingStatus == Parsing_Done) {
+  if (parsingStatus == PARSING_DONE) {
     bodyStr.append((char *)body.data(), body.size());
   }
 }
 
 bool Request::isParsingDone() {
-  return (parsingStatus == Parsing_Done);
+  return (parsingStatus == PARSING_DONE);
 }
 
 HttpMethod &Request::getHttpMethod() {
@@ -570,7 +570,7 @@ void Request::clear() {
   query.clear();
   httpMethod = NONE;
   httpMethod_index = 1;
-  parsingStatus = Request_Line;
+  parsingStatus = REQUEST_LINE;
   bodyLength = 0;
   chunkLength = 0x0;
   storage.clear();
