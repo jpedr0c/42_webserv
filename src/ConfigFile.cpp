@@ -1,8 +1,8 @@
 #include "../inc/ConfigFile.hpp"
 
-ConfigFile::ConfigFile() : size(0) {}
+ConfigFile::ConfigFile() {}
 
-ConfigFile::ConfigFile(std::string const path) : path(path), size(0) {}
+ConfigFile::ConfigFile(std::string const path) : path(path) {}
 
 ConfigFile::~ConfigFile() {}
 

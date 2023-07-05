@@ -13,7 +13,6 @@ enum FileType {
 class ConfigFile {
  private:
   std::string path;
-  size_t size;
 
  public:
   ConfigFile();
