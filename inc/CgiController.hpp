@@ -26,10 +26,7 @@ class CgiController {
   void initEnv(Request &req, const std::vector<Location>::iterator it_loc);
   void initEnvCgi(Request &req, const std::vector<Location>::iterator it_loc);
   void execute(short &error_code);
-  void sendHeaderBody(int &pipeOut, int &fd, std::string &);
-  void fixHeader(std::string &header);
   void clear();
-  std::string setCookie(const std::string &str);
   void setContentLength(int length);
   void setContentType(const std::string &contentType);
   void setDefaultEnvValues(Request &req, std::string cgiExec);
@@ -41,10 +38,7 @@ class CgiController {
   void setCgiPath(const std::string &cgiPath);
   const pid_t &getCgiPid() const;
   const std::string &getCgiPath() const;
-  std::string getAfter(const std::string &path, char delim);
-  std::string getBefore(const std::string &path, char delim);
   std::string getPathInfo(std::string &path, std::vector<std::string> extensions);
-  int countCookies(const std::string &str);
   int findStart(const std::string path, const std::string delim);
   std::string decode(std::string &path);
 };

@@ -179,7 +179,7 @@ void CgiController::execute(short &errorCode) {
   }
 
   if (pipe(pipeIn) < 0 || pipe(pipeOut) < 0) {
-    LogService::printLog(RED, SUCCESS, "Failed to execute pipe() operation. Please check your system resources and try again.");
+    LogService::printLog(RED_BOLD, SUCCESS, "Failed to execute pipe() operation. Please check your system resources and try again.");
     closePipes();
     errorCode = 500;
     return;
@@ -195,7 +195,7 @@ void CgiController::execute(short &errorCode) {
     exit(this->exitStatus);
 
   } else if (this->cgiPid < 0) {
-    LogService::printLog(RED, SUCCESS, "Fork failed. Unable to create a new process. Please check the system resources and try again.");
+    LogService::printLog(RED_BOLD, SUCCESS, "Fork failed. Unable to create a new process. Please check the system resources and try again.");
     closePipes();
     errorCode = 500;
   }

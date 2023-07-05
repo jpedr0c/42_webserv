@@ -4,8 +4,6 @@ Request::Request() {
   httpMethod_str[::GET] = "GET";
   httpMethod_str[::POST] = "POST";
   httpMethod_str[::DELETE] = "DELETE";
-  httpMethod_str[::PUT] = "PUT";
-  httpMethod_str[::HEAD] = "HEAD";
   path = "";
   query = "";
   _body_str = "";
@@ -84,11 +82,17 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
           break;
         } else if (character == 'D')
           httpMethod = DELETE;
-        else if (character == 'H')
-          httpMethod = HEAD;
-        else {
+        else if (character == 'H') {
           _error_code = 501;
-          std::cout << "Method Error Request_Line and Character is = " << character << std::endl;
+          LogService::printLog(ORANGE, SUCCESS, "Unsupported method <%s>", "HEAD");
+          return;
+        } else if (character == 'O') {
+          _error_code = 501;
+          LogService::printLog(ORANGE, SUCCESS, "Unsupported method <%s>", "OPTIONS");
+          return;
+        } else {
+          _error_code = 501;
+          LogService::printLog(ORANGE, SUCCESS, "Invalid character \"%s\"", character);
           return;
         }
         parsingStatus = Request_Line_Method;
@@ -97,11 +101,17 @@ void Request::parseHTTPRequestData(char *data, size_t size) {
       case Request_Line_Post_Put: {
         if (character == 'O')
           httpMethod = POST;
-        else if (character == 'U')
-          httpMethod = PUT;
-        else {
+        else if (character == 'U') {
           _error_code = 501;
-          std::cout << "Method Error Request_Line and Character is = " << character << std::endl;
+          LogService::printLog(ORANGE, SUCCESS, "Unsupported method <%s>", "PUT");
+          return;
+        } else if (character == 'A') {
+          _error_code = 501;
+          LogService::printLog(ORANGE, SUCCESS, "Unsupported method <%s>", "PATCH");
+          return;
+        } else {
+          _error_code = 501;
+          LogService::printLog(ORANGE, SUCCESS, "Invalid character \"%s\"", character);
           return;
         }
         httpMethod_index++;
@@ -585,6 +595,10 @@ void Request::_handle_headers() {
 
 short Request::errorCode() {
   return (this->_error_code);
+}
+
+void Request::setErrorCode(short status) {
+  this->_error_code = status;
 }
 
 void Request::clear() {

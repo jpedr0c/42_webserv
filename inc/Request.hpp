@@ -7,8 +7,6 @@ enum HttpMethod {
   GET,
   POST,
   DELETE,
-  PUT,
-  HEAD,
   NONE
 };
 
@@ -80,6 +78,7 @@ class Request {
   bool isParsingDone();
   void clear();
   short errorCode();
+  void setErrorCode(short status);
   bool keepAlive();
 
  private:

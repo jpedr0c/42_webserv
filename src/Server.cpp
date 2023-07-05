@@ -586,7 +586,7 @@ bool Server::checkLocation() const {
 
 void Server::setupServer(void) {
   if ((listenFd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-    LogService::printLog(RED, FAILURE, "Socket error %s   Closing ....", strerror(errno));
+    LogService::printLog(RED_BOLD, FAILURE, "Socket error %s   Closing ....", strerror(errno));
 
   int option_value = 1;
   setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, &option_value, sizeof(int));
@@ -595,5 +595,5 @@ void Server::setupServer(void) {
   serverAddress.sin_addr.s_addr = host;
   serverAddress.sin_port = htons(port);
   if (bind(listenFd, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1)
-    LogService::printLog(RED, FAILURE, "Bind error %s   Closing ....", strerror(errno));
+    LogService::printLog(RED_BOLD, FAILURE, "Bind error %s   Closing ....", strerror(errno));
 }
